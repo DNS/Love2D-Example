@@ -130,6 +130,24 @@ This is block comment
 
 --]]
 
+--[=[
+
+This is block comment
+
+--]=]
+
+--[==[
+
+This is block comment
+
+--]==]
+
+--[===[
+
+This is block comment
+
+--]===]
+
 -- Callback function
 function test ()
 	print 'ok'

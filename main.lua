@@ -773,20 +773,261 @@ end
 ]]
 
 
+--[===[
+-- SHADER LOVE GLSL
+function love.load ()
+	splash = love.graphics.newImage("futuretech_logo.jpg")
+	orang = love.graphics.newImage("orang.png")
+	myShader = love.graphics.newShader[[
+		/*// no effect
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+				return pixel * color;
+			}
+		*/
+		/*// red
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
+			return vec4(1.0,0.0,0.0,1.0);
+		}
+		*/
+		/*// half red-blue texture_coords
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			if(texture_coords.x > 0.5){
+				return vec4(1.0,0.0,0.0,1.0);//red
+			} else {
+				return vec4(0.0,0.0,1.0,1.0);//blue
+			}
+		}
+		*/
+		/*// half red-blue screen_coords
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			if(screen_coords.x > 400){
+				return vec4(1.0,0.0,0.0,1.0);//red
+			} else {
+				return vec4(0.0,0.0,1.0,1.0);//blue
+			}
+		}
+		*/
+		/*// black & white 1
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			number average = (pixel.r+pixel.b+pixel.g)/3.0;
+			pixel.r = average;
+			pixel.g = average;
+			pixel.b = average;
+			return pixel;
+		}
+		*/
+		/*// black & white 2
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 c = Texel(texture, texture_coords); // This reads a color from our texture at the coordinates LOVE gave us (0-1, 0-1)
+			return vec4(vec3(1.0, 1.0, 1.0) * (max(c.r, max(c.g, c.b))), 1.0); // This just returns a white color that's modulated by the brightest color channel at the given pixel in the texture. Nothing too complex, and not exactly the prettiest way to do B&W :P
+		}
+		*/
+		/*// gradual black & white
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			number average = (pixel.r+pixel.b+pixel.g)/3.0;
+			number factor = texture_coords.x;
+			pixel.r = pixel.r + (average-pixel.r) * factor;
+			pixel.g = pixel.g + (average-pixel.g) * factor;
+			pixel.b = pixel.b + (average-pixel.b) * factor;
+			return pixel;
+		}
+		*/
+		// static noise
+		extern float factor = 1;
+		extern float addPercent = 0.1;
+		extern float clamp = 0.1;
+
+		// from http://www.ozone3d.net/blogs/lab/20110427/glsl-random-generator/
+		float rand(vec2 n){
+			return 0.5 + 0.5 * fract(sin(dot(n.xy, vec2(12.9898, 78.233))) * 43758.5453);
+		}
+
+		vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc){
+			float grey = 1 * rand(tc * factor);
+			float clampedGrey = max(grey, clamp);
+			vec4 noise = vec4(grey, grey, grey, 1);
+			vec4 clampedNoise = vec4(clampedGrey, clampedGrey, clampedGrey, 1);
+			return (Texel(tex, tc) * clampedNoise * (1 - addPercent) + noise * addPercent) * color;
+		}
+		
+		
+		
+		]]
+end
+
+function love.draw ()
+	love.graphics.setShader(myShader) --draw something here
+	love.graphics.draw(splash, x, y)
+	love.graphics.setShader()
+	
+	love.graphics.draw(orang, 0, 300)
+end
+
+x = 0
+y = 0
+toggle = false
+
+function love.update (dt)
+	if x >= 100 then toggle = true end
+	if x <= 0 then toggle = false end
+	
+	if x <= 100 and toggle == false then
+		x = x + 3
+	elseif x >= 0 and toggle == true then
+		x = x - 3
+	end
+end
+
+]===]
+
+
+
+
+--[[
+-- THREAD
+
 function love.load ()
 	
+end
+
+function love.draw ()
+	--create a thread named worker running the code in thread.lua
+	thread1 = love.thread.newThread("thread1.lua")
+	--start the thread
+	thread1:start()
 end
 
 function love.update (dt)
 	
 end
+]]
 
 
-function love.draw ()
+--[[
+-- IMAGE FORMAT SUPPORT 
+
+--[=[
+Pixelformer: Use BMP export without premultiplied alpha. 
+	Export to BMP with premultiplied alpha has bug when using alpha blending image! 
+
+-- BMP no alpha
+BMP8 (8-bit, 256 color) uncompressed / RLE compressed, Pixelformer doesn't support RLE compression (use CorelPP or Photoshop instead)
+BMP15 = R5:G5:B5
+BMP16 = R5:G6:B5
+BMP24 = R8:G8:B8
+
+-- BMP with alpha
+BMP16 = A1:R5:G5:B5 (1-bit alpha, ugly alpha blend support, only for sharp edge transparent images)
+BMP16 = A4:R4:G4:B4 (4-bit alpha, good/medium alpha blend)
+BMP32 = A8:R8:G8:B8 (8-bit alpha, best alpha blend)
+
+
+]=]
+
+function love.load ()
+	img_png = love.graphics.newImage("su-avatar.png")	-- PNG32
+	img_bmp = love.graphics.newImage("su-avatar.bmp")	-- BMP32 
+	img_bmp_pa = love.graphics.newImage("su-avatar-premultiplied-alpha.bmp")	-- BMP32 & TGA Premultiplied Alpha (bug)
+	img_tga = love.graphics.newImage("su-avatar.tga")
+	img_jpg = love.graphics.newImage("su-avatar.jpg")
+	--img_gif = love.graphics.newImage("su-avatar.gif")	-- GIF not supported on Love2D 0.10.1
 	
+	love.graphics.setBackgroundColor(127, 127, 127)
 end
 
+function love.draw ()
+	love.graphics.draw(img_png, 50, 30)
+	love.graphics.draw(img_bmp, 50, 130)
+	love.graphics.draw(img_bmp_pa, 50, 230)
+	love.graphics.draw(img_tga, 50, 330)
+	love.graphics.draw(img_jpg, 50, 430)
+	
+	love.graphics.print("PNG32, BMP32, BMP32-PA, TGA, JPEG")
+end
+
+function love.update (dt)
+	
+end
+]]
 
 
 
+--[[
+-- TV Noise
 
+scale = 4
+
+function love.load ()
+	lotsanoiseimg = love.graphics.newImage("lotsanoise.png")
+end
+
+function love.draw ()
+	--love.graphics.setColor(255, 255, 255, 200)
+	love.graphics.draw(lotsanoiseimg, -math.random()*240, -math.random()*120, 0, scale, scale)
+end
+
+function love.update (dt)
+	
+end
+]]
+
+--[[
+-- infinite rolling object
+--screenWidth, screenHeight = love.graphics.getDimensions()
+box1 = false
+
+function love.load ()
+	box_img = love.graphics.newImage("box.png")
+end
+
+function love.draw ()
+	if box1 then
+		love.graphics.draw(box_img, box1_x, 100)
+	end
+end
+
+function love.update (dt)
+	if box1 == false then
+		box1_x = love.graphics.getWidth() + 100
+		box1 = true
+	end
+	
+	if box1 then
+		box1_x = box1_x - 20
+	end
+	
+	if box1_x <= -100 then
+		box1 = false
+	end
+end
+]]
+
+box1 = false
+
+function love.load ()
+	box_img = love.graphics.newImage("box.png")
+end
+
+function love.draw ()
+	if box1 then
+		love.graphics.draw(box_img, box1_x, 100)
+	end
+end
+
+function love.update (dt)
+	if box1 == false then
+		box1_x = love.graphics.getWidth() + 100
+		box1 = true
+	end
+	
+	if box1 then
+		box1_x = box1_x - 20
+	end
+	
+	if box1_x <= -100 then
+		box1 = false
+	end
+end

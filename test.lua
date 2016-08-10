@@ -1,6 +1,9 @@
 
-d = {444,2,3}
+info = {["a"]=1,2,3}
+d = {}
+table.insert(d, info)
+table.insert(d, info)
 
-for _,k in pairs(d) do
-	print( _ )
+for k,v in pairs(d) do
+	print( v["a"] )
 end
