@@ -741,7 +741,8 @@ function love.load ()
 	-- the sound file will be expanded into memory, so if you load a 5MB compressed .ogg file that way,
 	-- it would consume ~50MB RAM when fully decompressed. Consider not using "static" in such cases.
 	
-	snd1 = love.audio.newSource("UNREALPM.S3M", "static")
+	snd1 = love.audio.newSource("nerve_intro2.xm")
+	--snd1 = love.audio.newSource("nerve_intro2.xm", "static")
 	
 	--snd1:setVolume(0.9)	-- 90% of ordinary volume
 	--snd1:setPitch(0.5)	-- one octave lower
@@ -910,8 +911,7 @@ end
 -- IMAGE FORMAT SUPPORT 
 
 --[=[
-Pixelformer: Use BMP export without premultiplied alpha. 
-	Export to BMP with premultiplied alpha has bug when using alpha blending image! 
+Pixelformer: Export to BMP with premultiplied alpha need to use with love.graphics.setBlendMode("alpha", "premultiplied")
 
 -- BMP no alpha
 BMP8 (8-bit, 256 color) uncompressed / RLE compressed, Pixelformer doesn't support RLE compression (use CorelPP or Photoshop instead)
@@ -930,22 +930,27 @@ BMP32 = A8:R8:G8:B8 (8-bit alpha, best alpha blend)
 function love.load ()
 	img_png = love.graphics.newImage("su-avatar.png")	-- PNG32
 	img_bmp = love.graphics.newImage("su-avatar.bmp")	-- BMP32 
-	img_bmp_pa = love.graphics.newImage("su-avatar-premultiplied-alpha.bmp")	-- BMP32 & TGA Premultiplied Alpha (bug)
-	img_tga = love.graphics.newImage("su-avatar.tga")
-	img_jpg = love.graphics.newImage("su-avatar.jpg")
-	--img_gif = love.graphics.newImage("su-avatar.gif")	-- GIF not supported on Love2D 0.10.1
+	img_bmp_pa = love.graphics.newImage("su-avatar-premultiplied-alpha.bmp")	-- need to use love.graphics.setBlendMode("alpha", "premultiplied")
+	img_tga = love.graphics.newImage("su-avatar.tga")	-- TGA also support premultiplied alpha
+	img_jpg = love.graphics.newImage("su-avatar.jpg")	-- JPEG doesn't support alpha transparency
+	--img_gif = love.graphics.newImage("su-avatar.gif")	-- GIF, TIFF not supported by Love2D 0.10.1
 	
 	love.graphics.setBackgroundColor(127, 127, 127)
 end
 
 function love.draw ()
+	love.graphics.setBlendMode("alpha")	-- this is the default
 	love.graphics.draw(img_png, 50, 30)
 	love.graphics.draw(img_bmp, 50, 130)
+	
+	love.graphics.setBlendMode("alpha", "premultiplied")	-- use premultiplied alpha
 	love.graphics.draw(img_bmp_pa, 50, 230)
+	
+	love.graphics.setBlendMode("alpha")
 	love.graphics.draw(img_tga, 50, 330)
 	love.graphics.draw(img_jpg, 50, 430)
 	
-	love.graphics.print("PNG32, BMP32, BMP32-PA, TGA, JPEG")
+	love.graphics.print("PNG32, BMP32, BMP32-PM, TGA, JPEG")
 end
 
 function love.update (dt)
@@ -961,7 +966,7 @@ end
 scale = 4
 
 function love.load ()
-	lotsanoiseimg = love.graphics.newImage("lotsanoise.png")
+	lotsanoiseimg = love.graphics.newImage("lotsanoise.bmp")
 end
 
 function love.draw ()
@@ -1005,29 +1010,27 @@ function love.update (dt)
 end
 ]]
 
-box1 = false
+
+
+-- LIGHTNING, THUNDERSTORM EFFECT
 
 function love.load ()
 	box_img = love.graphics.newImage("box.png")
 end
 
 function love.draw ()
-	if box1 then
-		love.graphics.draw(box_img, box1_x, 100)
-	end
+	
 end
 
 function love.update (dt)
-	if box1 == false then
-		box1_x = love.graphics.getWidth() + 100
-		box1 = true
-	end
 	
-	if box1 then
-		box1_x = box1_x - 20
-	end
-	
-	if box1_x <= -100 then
-		box1 = false
-	end
 end
+
+
+
+
+
+
+
+
+
