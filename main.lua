@@ -1011,24 +1011,117 @@ end
 ]]
 
 
-
--- LIGHTNING, THUNDERSTORM EFFECT
+--[[
+-- CUSTOM LIGHTNING, THUNDERSTORM EFFECT
 
 function love.load ()
-	box_img = love.graphics.newImage("box.png")
+	splash = love.graphics.newImage("futuretech_logo.jpg")
+	half = love.graphics.newImage("half-transparent.png")
 end
 
 function love.draw ()
+	love.graphics.draw(splash)
+	if show_thunder == true then
+		love.graphics.draw(half)
+	end
+end
+
+x = 0
+show_thunder = false
+
+function love.update (dt)
+	x = x + 5
+	if x >= 100 and show_thunder == false then
+		show_thunder = true
+	elseif x >=200 and show_thunder == true then
+		show_thunder = false
+		x = 0
+	end
+end
+]]
+
+--[[
+-- IMAGE SCALING
+scale = 0.5
+function love.load ()
+	splash = love.graphics.newImage("futuretech_logo.jpg")
 	
 end
+
+function love.draw ()
+	love.graphics.draw(splash, 0, 0, 0, scale, scale)
+	
+end
+
 
 function love.update (dt)
 	
 end
+]]
 
 
 
+-- PARALLAX SCROLLING & IMAGE SCALING
+x1 = 0
+x2 = 0
+x3 = 0
+scale = 1.0
 
+function love.load ()
+	cloud1 = love.graphics.newImage("kitty/cloud1.png")
+	cloud2 = love.graphics.newImage("kitty/cloud2.png")
+	ground1 = love.graphics.newImage("kitty/ground1.png")
+	ground2 = love.graphics.newImage("kitty/ground2.png")
+	ground3 = love.graphics.newImage("kitty/ground3.png")
+	rock1 = love.graphics.newImage("kitty/rock1.png")
+	sky1 = love.graphics.newImage("kitty/sky1.png")
+	
+end
+
+function love.draw ()
+	love.graphics.draw(sky1, 0*scale, 0*scale, 0, scale)
+	--
+	love.graphics.draw(rock1, x2*scale, 160*scale, 0, scale)
+	love.graphics.draw(rock1, (x2+800)*scale, 160*scale, 0, scale)
+	--
+	love.graphics.draw(cloud1, (x3+40)*scale, 10, 0, scale)
+	love.graphics.draw(cloud2, (x3+400)*scale, 40, 0, scale)
+	
+	love.graphics.draw(cloud1, (x3+40+800)*scale, 10, 0, scale)
+	love.graphics.draw(cloud2, (x3+400+800)*scale, 40, 0, scale)
+	--
+	love.graphics.draw(ground1, x1*scale, 336*scale, 0, scale)
+	love.graphics.draw(ground3, x1*scale, 400*scale, 0, scale)
+	love.graphics.draw(ground2, x1*scale, 450*scale, 0, scale)
+	
+	love.graphics.draw(ground1, (x1+800)*scale, 336*scale, 0, scale)
+	love.graphics.draw(ground3, (x1+800)*scale, 400*scale, 0, scale)
+	love.graphics.draw(ground2, (x1+800)*scale, 450*scale, 0, scale)
+end
+
+function love.update (dt)
+	if love.keyboard.isDown('escape') then
+		love.event.quit(0)
+	end
+	
+	if x1 < -800 then
+		x1 = 0
+	else
+		x1 = x1 - 6
+	end
+	
+	if x2 < -800 then
+		x2 = 0
+	else
+		x2 = x2 - 1.1
+	end
+	
+	if x3 < -800 then
+		x3 = 0
+	else
+		x3 = x3 - 0.2
+	end
+end
 
 
 
