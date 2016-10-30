@@ -25,7 +25,7 @@ end
 
 function love.update (dt)
 	--x, y = love.mouse.getPosition()
-		
+	
 	if love.keyboard.isDown("right") then
 		x = x + speed*dt
 	end
@@ -1062,6 +1062,7 @@ end
 
 
 -- PARALLAX SCROLLING & IMAGE SCALING
+-- Note: love2d default scaling algorithm doen's work well & look ugly
 x1 = 0
 x2 = 0
 x3 = 0
@@ -1122,6 +1123,30 @@ function love.update (dt)
 		x3 = x3 - 0.2
 	end
 end
+
+
+
+--[[
+function love.load ()
+	splash = love.graphics.newImage("futuretech_logo.jpg")
+	
+end
+
+function love.draw ()
+	love.graphics.draw(splash, 0, 0, 0, scale, scale)
+	
+end
+
+
+function love.update (dt)
+	
+end
+]]
+
+
+
+
+
 
 
 
