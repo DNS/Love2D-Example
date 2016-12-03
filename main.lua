@@ -927,6 +927,8 @@ BMP32 = A8:R8:G8:B8 (8-bit alpha, best alpha blend)
 
 ]=]
 
+scale = 1
+
 function love.load ()
 	img_png = love.graphics.newImage("su-avatar.png")	-- PNG32
 	img_bmp = love.graphics.newImage("su-avatar.bmp")	-- BMP32 
@@ -940,15 +942,17 @@ end
 
 function love.draw ()
 	love.graphics.setBlendMode("alpha")	-- this is the default
-	love.graphics.draw(img_png, 50, 30)
-	love.graphics.draw(img_bmp, 50, 130)
+	love.graphics.draw(img_png, 50, 30, 0, scale, scale)
+	love.graphics.draw(img_bmp, 50, 130, 0, scale, scale)
 	
 	love.graphics.setBlendMode("alpha", "premultiplied")	-- use premultiplied alpha
-	love.graphics.draw(img_bmp_pa, 50, 230)
+	love.graphics.draw(img_bmp_pa, 50, 230, 0, scale, scale)
 	
 	love.graphics.setBlendMode("alpha")
-	love.graphics.draw(img_tga, 50, 330)
-	love.graphics.draw(img_jpg, 50, 430)
+	love.graphics.draw(img_tga, 50, 330, 0, scale, scale)
+	love.graphics.draw(img_jpg, 50, 430, 0, scale, scale)
+	
+	--love.graphics.draw(lotsanoiseimg, x, y, 0, scale, scale)
 	
 	love.graphics.print("PNG32, BMP32, BMP32-PM, TGA, JPEG")
 end
@@ -1060,7 +1064,7 @@ end
 ]]
 
 
-
+--[[
 -- PARALLAX SCROLLING & IMAGE SCALING
 -- Note: love2d default scaling algorithm doen's work well & look ugly
 x1 = 0
@@ -1123,18 +1127,24 @@ function love.update (dt)
 		x3 = x3 - 0.2
 	end
 end
-
+]]
 
 
 --[[
+-- LOAD MULTIPLE SPRITE FROM ONE IMAGE FOR ANIMATION
+
+scale = 5
+
 function love.load ()
-	splash = love.graphics.newImage("futuretech_logo.jpg")
-	
+	char1 = love.graphics.newImage("trosh.png")
+	quad_stand = love.graphics.newQuad(0, 0, 14, 24, char1:getWidth(), char1:getHeight())
+	quad_walk = love.graphics.newQuad(14, 0, 14, 24, char1:getWidth(), char1:getHeight())
 end
 
 function love.draw ()
-	love.graphics.draw(splash, 0, 0, 0, scale, scale)
 	
+	love.graphics.draw(char1, quad_stand, 0, 0, 0, scale, scale)
+	love.graphics.draw(char1, quad_walk, 0, 200, 0, scale, scale)
 end
 
 
@@ -1143,12 +1153,88 @@ function love.update (dt)
 end
 ]]
 
+--[[
+-- SPRITE SHEET ANIMATION
+
+scale = 5
+frames = {}
+currentFrame = 1
+elapsedTime = 0
+totalFrame = 2
+
+function love.load ()
+	char1 = love.graphics.newImage("trosh.png")
+	frames[1] = love.graphics.newQuad(0, 0, 14, 24, char1:getWidth(), char1:getHeight())
+	frames[2] = love.graphics.newQuad(14, 0, 14, 24, char1:getWidth(), char1:getHeight())
+	activeFrame = frames[currentFrame]
+end
+
+function love.draw ()
+	love.graphics.draw(char1, activeFrame, 0, 0, 0, scale, scale)
+	
+end
+
+
+function love.update (dt)
+	elapsedTime = elapsedTime + dt
+	
+	if (elapsedTime > 0.1) then
+		if (currentFrame < totalFrame) then
+			currentFrame = currentFrame + 1
+		else
+			currentFrame = 1
+		end
+		activeFrame = frames[currentFrame]
+		elapsedTime = 0
+	end
+end
+]]
 
 
 
+-- SPRITE SHEET ANIMATION + KEYBOARD INPUT
+
+scale = 5
+frames = {}
+currentFrame = 1
+elapsedTime = 0
+totalFrame = 2
+x = 0
+speed = 400
+
+function love.load ()
+	char1 = love.graphics.newImage("trosh.png")
+	frames[1] = love.graphics.newQuad(0, 0, 14, 24, char1:getWidth(), char1:getHeight())
+	frames[2] = love.graphics.newQuad(14, 0, 14, 24, char1:getWidth(), char1:getHeight())
+	activeFrame = frames[currentFrame]
+end
+
+function love.draw ()
+	love.graphics.draw(char1, activeFrame, x, 0, 0, scale, scale)
+	
+end
 
 
-
-
+function love.update (dt)
+	elapsedTime = elapsedTime + dt
+	
+	if (elapsedTime > 0.1) then
+		if (currentFrame < totalFrame) then
+			currentFrame = currentFrame + 1
+		else
+			currentFrame = 1
+		end
+		activeFrame = frames[currentFrame]
+		elapsedTime = 0
+	end
+	
+	if love.keyboard.isDown("right") then
+		x = x + speed*dt
+	end
+	if love.keyboard.isDown("left") then
+		x = x - speed*dt
+	end
+	
+end
 
 
