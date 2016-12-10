@@ -373,7 +373,7 @@ end
 
 
 --[[
--- PLATFORMER JUMPING
+-- PLATFORMER JUMPING + GRAVITY
 function love.load()
 	-- Nice and organised
 	player = {
@@ -385,8 +385,8 @@ function love.load()
 		image = love.graphics.newImage("box.png") -- Let's just re-use this sprite
 	}
 	
-	gravity = 400
-	jump_height = 300
+	gravity = 1000
+	jump_height = 350
 	
 	winW, winH = love.graphics.getWidth(), love.graphics.getHeight() -- This is just so we can draw it in a fabulous manner
 end
@@ -398,18 +398,7 @@ function love.draw()
 	love.graphics.draw(player.image, player.x, -player.y, 0, 1, 1, 64, 80) -- Trust me on the origin position. Just trust me
 end
 
-function love.update (dt)
-	if player.y_velocity ~= 0 then -- We're probably jumping
-		player.y = player.y + player.y_velocity * dt -- "dt" means we wont move at different speeds if the game lags
-		player.y_velocity = player.y_velocity - gravity * dt
-		
-		if player.y < 0 then -- We hit the ground again
-			player.y_velocity = 0
-			player.y = 0
-		end
-	end
-end
- 
+
 function love.keypressed(key, scancode, isrepeat)
 	if key == "space" then
 		if player.y_velocity == 0 then -- We're probably on the ground, let's jump
@@ -1199,26 +1188,40 @@ frames = {}
 currentFrame = 1
 elapsedTime = 0
 totalFrame = 2
-x = 0
+x = 200
+y = 400
+
+y_ground = y
 speed = 400
 
+y_velocity = 0
+jetpack_fuel = 0.5	-- Note: not an actual jetpack. Variable is the time (in seconds) you can hold spacebar and jump higher.
+jetpack_fuel_max = 0.5
+
+gravity = 1000
+jump_height = 350
+
+up_toggle = false
+
 function love.load ()
-	char1 = love.graphics.newImage("trosh.png")
-	frames[1] = love.graphics.newQuad(0, 0, 14, 24, char1:getWidth(), char1:getHeight())
+	char1 = love.graphics.newImage("trosh.png")		-- SPRITE SHEET 
+	frames[1] = love.graphics.newQuad(0, 0, 14, 24, char1:getWidth(), char1:getHeight())		-- SPRITE SEPARATION 
 	frames[2] = love.graphics.newQuad(14, 0, 14, 24, char1:getWidth(), char1:getHeight())
 	activeFrame = frames[currentFrame]
 end
 
 function love.draw ()
-	love.graphics.draw(char1, activeFrame, x, 0, 0, scale, scale)
-	
+	love.graphics.draw(char1, activeFrame, x, y, 0, scale, scale)
+	if up_toggle == true then
+		love.graphics.print("OK")
+	end
 end
 
 
 function love.update (dt)
 	elapsedTime = elapsedTime + dt
 	
-	if (elapsedTime > 0.1) then
+	if (elapsedTime > 0.3) then
 		if (currentFrame < totalFrame) then
 			currentFrame = currentFrame + 1
 		else
@@ -1235,6 +1238,45 @@ function love.update (dt)
 		x = x - speed*dt
 	end
 	
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+	
+	-- toggle
+	if love.keyboard.isDown("up") then
+		up_toggle = true
+	elseif love.keyboard.isDown("up") and up_toggle == true then
+		-- none
+	elseif up_toggle == true then
+		--up_toggle = false
+	end
+	
+	
+	
+	-- JUMP
+	if love.keyboard.isDown("up") then
+		if y_velocity == 0 then -- We're probably on the ground, let's jump
+			y_velocity = jump_height
+		end
+	end
+	
+	if jetpack_fuel > 0 then -- We can still move upwards and we're actually holding space
+		jetpack_fuel = jetpack_fuel - dt -- Decrease the fuel meter
+		y_velocity = y_velocity + jump_height * (dt / jetpack_fuel_max)
+	end
+	
+	if y_velocity ~= 0 then -- we're probably jumping
+		y = y - y_velocity * dt -- "dt" means we wont move at different speeds if the game lags
+		y_velocity = y_velocity - gravity * dt
+		
+		-- We hit the ground again
+		if y > y_ground then
+			y_velocity = 0
+			y = y_ground
+			jetpack_fuel = jetpack_fuel_max
+			up_toggle = false
+		end
+	end
 end
 
 
