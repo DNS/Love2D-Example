@@ -303,7 +303,7 @@ end
 
 
 
---[[
+--
 -- PHYSICS BOX2D
 function love.load()
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
@@ -315,14 +315,14 @@ function love.load()
 	objects.ground = {}
 	objects.ground.body = love.physics.newBody(world, 650/2, 650-50/2) --remember, the shape (the rectangle we create next) anchors to the body from its center, so we have to move it to (650/2, 650-50/2)
 	objects.ground.shape = love.physics.newRectangleShape(650, 50) --make a rectangle with a width of 650 and a height of 50
-	objects.ground.fixture = love.physics.newFixture(objects.ground.body, objects.ground.shape); --attach shape to body
+	objects.ground.fixture = love.physics.newFixture(objects.ground.body, objects.ground.shape) --attach shape to body
 	
 	--let's create a BALL
 	objects.ball = {}
 	objects.ball.body = love.physics.newBody(world, 650/2, 650/2, "dynamic") --place the body in the center of the world and make it dynamic, so it can move around
 	objects.ball.shape = love.physics.newCircleShape(20) --the ball's shape has a radius of 20
 	objects.ball.fixture = love.physics.newFixture(objects.ball.body, objects.ball.shape, 1) -- Attach fixture to body and give it a density of 1.
-	objects.ball.image = love.graphics.newImage("orang.png")
+	--objects.ball.image = love.graphics.newImage("orang.png")
 	objects.ball.fixture:setRestitution(0.9) --let the ball bounce
 	
 	
@@ -361,15 +361,15 @@ function love.draw()
 	love.graphics.setColor(72, 160, 14) -- set the drawing color to green for the ground
 	love.graphics.polygon("fill", objects.ground.body:getWorldPoints(objects.ground.shape:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
 	
-	--love.graphics.setColor(193, 47, 14) --set the drawing color to red for the ball
-	love.graphics.draw(objects.ball.image, objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.body:getAngle(),  1, 1, objects.ball.image:getWidth()/2, objects.ball.image:getHeight()/2)
-	--love.graphics.circle("fill", objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.shape:getRadius())
+	love.graphics.setColor(193, 47, 14) --set the drawing color to red for the ball
+	--love.graphics.draw(objects.ball.image, objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.body:getAngle(),  1, 1, objects.ball.image:getWidth()/2, objects.ball.image:getHeight()/2)
+	love.graphics.circle("fill", objects.ball.body:getX(), objects.ball.body:getY(), objects.ball.shape:getRadius())
 	
 	love.graphics.setColor(50, 50, 50) -- set the drawing color to grey for the blocks
 	love.graphics.polygon("fill", objects.block1.body:getWorldPoints(objects.block1.shape:getPoints()))
 	love.graphics.polygon("fill", objects.block2.body:getWorldPoints(objects.block2.shape:getPoints()))
 end
-]]
+
 
 
 --[[
@@ -1179,9 +1179,8 @@ function love.update (dt)
 end
 ]]
 
-
-
--- SPRITE SHEET ANIMATION + KEYBOARD INPUT
+--[[
+-- SPRITE SHEET ANIMATION + KEYBOARD INPUT + GRAVITY
 
 scale = 5
 frames = {}
@@ -1196,14 +1195,15 @@ speed = 400
 
 y_velocity = 0
 jetpack_fuel = 0.5	-- Note: not an actual jetpack. Variable is the time (in seconds) you can hold spacebar and jump higher.
-jetpack_fuel_max = 0.5
+jetpack_fuel_max = 1
 
 gravity = 1000
-jump_height = 350
+jump_height = 500
 
-up_toggle = false
+jump = false
 
 function love.load ()
+	height500 = love.graphics.newImage("height-500px.png")
 	char1 = love.graphics.newImage("trosh.png")		-- SPRITE SHEET 
 	frames[1] = love.graphics.newQuad(0, 0, 14, 24, char1:getWidth(), char1:getHeight())		-- SPRITE SEPARATION 
 	frames[2] = love.graphics.newQuad(14, 0, 14, 24, char1:getWidth(), char1:getHeight())
@@ -1211,10 +1211,14 @@ function love.load ()
 end
 
 function love.draw ()
+	love.graphics.draw(height500, 50, 50)
 	love.graphics.draw(char1, activeFrame, x, y, 0, scale, scale)
-	if up_toggle == true then
+	if y == y_ground then
 		love.graphics.print("OK")
 	end
+	love.graphics.print("\nOK")
+	--love.graphics.print("y: " .. y)
+	--love.graphics.print("\ny_ground: " .. y_ground)
 end
 
 
@@ -1242,16 +1246,6 @@ function love.update (dt)
 		love.event.quit()
 	end
 	
-	-- toggle
-	if love.keyboard.isDown("up") then
-		up_toggle = true
-	elseif love.keyboard.isDown("up") and up_toggle == true then
-		-- none
-	elseif up_toggle == true then
-		--up_toggle = false
-	end
-	
-	
 	
 	-- JUMP
 	if love.keyboard.isDown("up") then
@@ -1260,10 +1254,10 @@ function love.update (dt)
 		end
 	end
 	
-	if jetpack_fuel > 0 then -- We can still move upwards and we're actually holding space
-		jetpack_fuel = jetpack_fuel - dt -- Decrease the fuel meter
+	--if jetpack_fuel > 0 then -- We can still move upwards and we're actually holding space
+	--	jetpack_fuel = jetpack_fuel - dt -- Decrease the fuel meter
 		y_velocity = y_velocity + jump_height * (dt / jetpack_fuel_max)
-	end
+	--end
 	
 	if y_velocity ~= 0 then -- we're probably jumping
 		y = y - y_velocity * dt -- "dt" means we wont move at different speeds if the game lags
@@ -1273,10 +1267,103 @@ function love.update (dt)
 		if y > y_ground then
 			y_velocity = 0
 			y = y_ground
-			jetpack_fuel = jetpack_fuel_max
-			up_toggle = false
 		end
 	end
+	
+	
+	
+end
+]]
+
+--[[
+-- WAIT JUMPING UNTIL THE BUTTON IS RELEASED + LINEAR GRAVITY (FAKE)
+x = 400
+y_ground = 400
+y = y_ground
+jump_height = 100 -- px
+jump = false
+go_down = false
+
+function love.load ()
+	orang = love.graphics.newImage("orang.png")
 end
 
+function love.draw ()
+	love.graphics.draw(orang, x, y, 0, 1, 1)
+	--if go_down then love.graphics.print("OK") end
+end
 
+function love.update (dt)
+	if love.keyboard.isDown("space") then
+		if not jump then
+			jump = true
+		end
+	end
+	
+	if jump then
+		if not go_down and y_ground-y <= jump_height then
+			y = y - 5
+		elseif not go_down and not (y_ground-y <= jump_height) then
+			go_down = true
+		elseif go_down and (y_ground-y) >= 0 then
+			y = y + 5
+		elseif not love.keyboard.isDown("space") then
+			go_down = false
+			jump = false
+		end
+	end
+	
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+]]
+
+--[[
+-- WAIT JUMPING UNTIL THE BUTTON IS RELEASED + REAL GRAVITY
+x = 400
+y_ground = 400
+y = y_ground
+
+jump_height = 800 -- px
+jump = false
+go_down = false
+
+y_velocity = 0
+gravity = 2000
+
+function love.load ()
+	orang = love.graphics.newImage("orang.png")
+end
+
+function love.draw ()
+	love.graphics.draw(orang, x, y)
+	--if go_down then love.graphics.print("OK") end
+end
+
+function love.update (dt)
+	if love.keyboard.isDown("space") then
+		if not jump then
+			jump = true
+			y_velocity = jump_height
+		end
+	end
+	
+	if jump then
+		y = y - y_velocity*dt
+		y_velocity = y_velocity - gravity*dt
+		if y >= y_ground then
+			y = y_ground
+			if not love.keyboard.isDown("space") then
+				jump = false
+			end
+		end
+	
+	end
+	
+	
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+]]

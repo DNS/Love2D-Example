@@ -13,7 +13,7 @@
 *	multiply
 /	divide
 %	modulus (remainder)
-^	exponent
+^	exponent (power & root)
 and
 or
 not
