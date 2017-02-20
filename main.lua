@@ -294,7 +294,7 @@ end
 function love.update (dt)
 end
 
-function love.keyreleased(key)
+function love.keyreleased (key)
 	if key == "escape" then
 		love.event.quit()
 	end
@@ -303,9 +303,9 @@ end
 
 
 
---
+--[[
 -- PHYSICS BOX2D
-function love.load()
+function love.load ()
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
 	world = love.physics.newWorld(0, 9.81*64, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 9.81
 	
@@ -357,7 +357,7 @@ function love.update (dt)
 	end
 end
 
-function love.draw()
+function love.draw ()
 	love.graphics.setColor(72, 160, 14) -- set the drawing color to green for the ground
 	love.graphics.polygon("fill", objects.ground.body:getWorldPoints(objects.ground.shape:getPoints())) -- draw a "filled in" polygon using the ground's coordinates
 	
@@ -369,7 +369,7 @@ function love.draw()
 	love.graphics.polygon("fill", objects.block1.body:getWorldPoints(objects.block1.shape:getPoints()))
 	love.graphics.polygon("fill", objects.block2.body:getWorldPoints(objects.block2.shape:getPoints()))
 end
-
+--]]
 
 
 --[[
@@ -769,11 +769,19 @@ function love.load ()
 	splash = love.graphics.newImage("futuretech_logo.jpg")
 	orang = love.graphics.newImage("orang.png")
 	myShader = love.graphics.newShader[[
-		/*// no effect
-		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
-			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
-				return pixel * color;
-			}
+		/*
+		GLSL CHEATSHEET:
+		vec4.r = red value range 0.0 - 1.0
+		vec4.g = green value range 0.0 - 1.0
+		vec4.b = bluevalue range 0.0 - 1.0
+		vec4.a = alpha value range 0.0 - 1.0
+		
+		*/
+		// no effect
+		/*vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
+			vec4 pixel = Texel(texture, texture_coords);	//This is the current pixel color
+			return pixel * color;
+		}
 		*/
 		/*// red
 		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ) {
@@ -825,7 +833,49 @@ function love.load ()
 			return pixel;
 		}
 		*/
-		// static noise
+		/*// negative color
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			pixel.r = 1-pixel.r;
+			pixel.g = 1-pixel.g;
+			pixel.b = 1-pixel.b;
+			return pixel;
+		}		
+		*/
+		/*// alpha
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			pixel.a = 0.5;
+			return pixel;
+		}*/
+		/*// psychedelic
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			pixel.r = abs(0.6-pixel.r);
+			pixel.g = abs(0.2-pixel.g);
+			pixel.b = abs(0.4-pixel.b);
+			return pixel;
+		}*/
+		// static TV noise (full)
+		float rand2 ( vec2 p ) {
+			// e^pi (Gelfond's constant)
+			// 2^sqrt(2) (Gelfond–Schneider constant)
+			vec2 r = vec2( 23.14069263277926, 2.665144142690225 );
+			//return fract( cos( mod( 12345678., 256. * dot(p,r) ) ) ); // ver1
+			return fract(cos(dot(p,r)) * 123456.); // ver2
+		}
+		float rand1 ( vec2 co) {
+			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+		}
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			pixel.r = rand1(vec2(texture_coords.x, texture_coords.y));
+			pixel.g = rand1(vec2(texture_coords.x, texture_coords.y));
+			pixel.b = rand1(vec2(texture_coords.x, texture_coords.y));
+			return pixel;
+		}
+		
+		/*// static TV noise (partial)
 		extern float factor = 1;
 		extern float addPercent = 0.1;
 		extern float clamp = 0.1;
@@ -842,23 +892,24 @@ function love.load ()
 			vec4 clampedNoise = vec4(clampedGrey, clampedGrey, clampedGrey, 1);
 			return (Texel(tex, tc) * clampedNoise * (1 - addPercent) + noise * addPercent) * color;
 		}
-		
+		*/
 		
 		
 		]]
 end
 
+x = 0
+y = 0
+toggle = false
+
 function love.draw ()
+	love.graphics.draw(orang, 0, 0)
 	love.graphics.setShader(myShader) --draw something here
 	love.graphics.draw(splash, x, y)
 	love.graphics.setShader()
 	
-	love.graphics.draw(orang, 0, 300)
+	
 end
-
-x = 0
-y = 0
-toggle = false
 
 function love.update (dt)
 	if x >= 100 then toggle = true end
@@ -874,6 +925,60 @@ end
 ]===]
 
 
+
+-- PASS LUA VARIABLE TO GLSL
+function love.load ()
+	splash = love.graphics.newImage("futuretech_logo.jpg")
+	orang = love.graphics.newImage("orang.png")
+	myShader = love.graphics.newShader[[
+		/*
+		GLSL			LÖVE shader language
+		float			number
+		sampler2D		Image
+		uniform			extern
+		texture2D(tex, uv)	Texel(tex, uv)
+		*/
+		
+		extern number var1, var2;		// DECLARE EXTERNAL VARIABLE
+		
+		vec4 effect (vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+			vec4 pixel = Texel(texture, texture_coords);	//This is the current pixel color
+			pixel.r = var1;
+			pixel.g = var2;
+			pixel.b = 0;
+			return pixel;
+		}
+		
+		
+		
+		]]
+	
+	myShader:send("var1", 1)
+	myShader:send("var2", 0.5)
+end
+
+x = 0
+y = 0
+toggle = false
+
+function love.draw ()
+	love.graphics.draw(orang, 0, 0)
+	love.graphics.setShader(myShader) --draw something here
+	love.graphics.draw(splash, x, y)
+	love.graphics.setShader()
+	
+end
+
+function love.update (dt)
+	if x >= 100 then toggle = true end
+	if x <= 0 then toggle = false end
+	
+	if x <= 100 and toggle == false then
+		x = x + 3
+	elseif x >= 0 and toggle == true then
+		x = x - 3
+	end
+end
 
 
 --[[
@@ -940,9 +1045,7 @@ function love.draw ()
 	love.graphics.setBlendMode("alpha")
 	love.graphics.draw(img_tga, 50, 330, 0, scale, scale)
 	love.graphics.draw(img_jpg, 50, 430, 0, scale, scale)
-	
-	--love.graphics.draw(lotsanoiseimg, x, y, 0, scale, scale)
-	
+		
 	love.graphics.print("PNG32, BMP32, BMP32-PM, TGA, JPEG")
 end
 

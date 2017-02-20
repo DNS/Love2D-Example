@@ -8,3 +8,12 @@ tai kotok (game bersihin sampah, klik kodok loncat)
 
 
 guard wall + trump = (tower defense / immigration) ?
+
+
+
+if health critical then play heartbeat.mp3
+
+
+
+
+

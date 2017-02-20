@@ -20,7 +20,11 @@ not
 ..	concatenation, eg: "Hello " .. "World" .. 12345
 #	return the length of string or table, eg: #"Hello" will return 5
 
+math.abs(-15)	-- return 15 (absolute number)
+math.pi			-- return PI constant number = 3.1415926535898
+math.exp(1)		-- return e^1 = 2.718281828459
 
+radians = degrees * math.pi / 180	-- To convert degrees to radians
 
 print(123)	-- print with newline
 print("abc")	-- print with newline
