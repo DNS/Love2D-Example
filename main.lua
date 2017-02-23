@@ -763,7 +763,7 @@ end
 ]]
 
 
---[===[
+--[=[
 -- SHADER LOVE GLSL
 function love.load ()
 	splash = love.graphics.newImage("futuretech_logo.jpg")
@@ -901,11 +901,13 @@ end
 x = 0
 y = 0
 toggle = false
+scale = 10
 
 function love.draw ()
 	love.graphics.draw(orang, 0, 0)
 	love.graphics.setShader(myShader) --draw something here
 	love.graphics.draw(splash, x, y)
+	--love.graphics.draw(splash, -math.random()*240, -math.random()*120, 0, scale, scale)	-- use this to see TV noise effect
 	love.graphics.setShader()
 	
 	
@@ -921,11 +923,11 @@ function love.update (dt)
 		x = x - 3
 	end
 end
-
-]===]
-
+]=]
 
 
+
+--[=[
 -- PASS LUA VARIABLE TO GLSL
 function love.load ()
 	splash = love.graphics.newImage("futuretech_logo.jpg")
@@ -979,7 +981,7 @@ function love.update (dt)
 		x = x - 3
 	end
 end
-
+--]=]
 
 --[[
 -- THREAD
@@ -989,16 +991,20 @@ function love.load ()
 end
 
 function love.draw ()
+	--love.graphics.print("start")
+
 	--create a thread named worker running the code in thread.lua
 	thread1 = love.thread.newThread("thread1.lua")
 	--start the thread
 	thread1:start()
+	
+	--love.graphics.print("end")
 end
 
 function love.update (dt)
 	
 end
-]]
+--]]
 
 
 --[[
@@ -1031,7 +1037,7 @@ function love.load ()
 	img_jpg = love.graphics.newImage("su-avatar.jpg")	-- JPEG doesn't support alpha transparency
 	--img_gif = love.graphics.newImage("su-avatar.gif")	-- GIF, TIFF not supported by Love2D 0.10.1
 	
-	love.graphics.setBackgroundColor(127, 127, 127)
+	love.graphics.setBackgroundColor(127, 127, 127)		-- gray background color
 end
 
 function love.draw ()
@@ -1045,7 +1051,7 @@ function love.draw ()
 	love.graphics.setBlendMode("alpha")
 	love.graphics.draw(img_tga, 50, 330, 0, scale, scale)
 	love.graphics.draw(img_jpg, 50, 430, 0, scale, scale)
-		
+	
 	love.graphics.print("PNG32, BMP32, BMP32-PM, TGA, JPEG")
 end
 
@@ -1056,8 +1062,8 @@ end
 
 
 
---[[
--- TV Noise
+--
+-- TV NOISE FROM TEXTURE
 
 scale = 4
 
@@ -1066,14 +1072,14 @@ function love.load ()
 end
 
 function love.draw ()
-	--love.graphics.setColor(255, 255, 255, 200)
+	love.graphics.setColor(255, 255, 255, 200)
 	love.graphics.draw(lotsanoiseimg, -math.random()*240, -math.random()*120, 0, scale, scale)
 end
 
 function love.update (dt)
 	
 end
-]]
+
 
 --[[
 -- infinite rolling object
