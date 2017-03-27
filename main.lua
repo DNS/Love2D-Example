@@ -382,7 +382,7 @@ function love.load()
 		y_velocity = 0,
 		jetpack_fuel = 0.5, -- Note: not an actual jetpack. Variable is the time (in seconds) you can hold spacebar and jump higher.
 		jetpack_fuel_max = 0.5,
-		image = love.graphics.newImage("box.png") -- Let's just re-use this sprite
+		image = love.graphics.newImage("[.png") -- Let's just re-use this sprite
 	}
 	
 	gravity = 1000
@@ -895,7 +895,8 @@ function love.load ()
 		*/
 		
 		
-		]]
+	]]
+	
 end
 
 x = 0
@@ -909,8 +910,6 @@ function love.draw ()
 	love.graphics.draw(splash, x, y)
 	--love.graphics.draw(splash, -math.random()*240, -math.random()*120, 0, scale, scale)	-- use this to see TV noise effect
 	love.graphics.setShader()
-	
-	
 end
 
 function love.update (dt)
@@ -925,6 +924,64 @@ function love.update (dt)
 end
 ]=]
 
+
+--[=[
+-- SCREEN SHOOT
+function love.load ()
+	--splash = love.graphics.newImage("futuretech_logo.jpg")
+	splash = love.graphics.newImage("white-4000x4000.png")
+	myShader = love.graphics.newShader[[
+		// static TV noise (full)
+		float rand2 ( vec2 p ) {
+			// e^pi (Gelfond's constant)
+			// 2^sqrt(2) (Gelfond–Schneider constant)
+			vec2 r = vec2( 23.14069263277926, 2.665144142690225 );
+			//return fract( cos( mod( 12345678., 256. * dot(p,r) ) ) ); // ver1
+			return fract(cos(dot(p,r)) * 123456.); // ver2
+		}
+		float rand1 ( vec2 co) {
+			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+		}
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			pixel.r = rand1(vec2(texture_coords.x, texture_coords.y));
+			pixel.g = rand1(vec2(texture_coords.x, texture_coords.y));
+			pixel.b = rand1(vec2(texture_coords.x, texture_coords.y));
+			return pixel;
+		}
+		
+	]]
+		
+	--love.filesystem.setIdentity('screenshot_example')
+	--love.window.setMode(4000, 4000)
+end
+
+x = 0
+y = 0
+toggle = false
+scale = 1
+
+function love.draw ()
+	love.graphics.setShader(myShader) --draw something here
+	love.graphics.draw(splash, x, y)
+	love.graphics.draw(splash, -math.random()*240, -math.random()*120, 0, scale, scale)	-- use this to see TV noise effect
+	love.graphics.setShader()
+	
+	
+end
+
+function love.update (dt)
+	
+end
+
+
+function love.keypressed()
+    local screenshot = love.graphics.newScreenshot()
+    -- saved to %APPDATA% directory
+    -- C:\Users\[USERNAME]\AppData\Roaming\LOVE\[Love2D Example]
+    screenshot:encode('png', os.time() .. '.png')
+end
+--]=]
 
 
 --[=[
@@ -1062,13 +1119,13 @@ end
 
 
 
---
+--[[
 -- TV NOISE FROM TEXTURE
 
-scale = 4
+scale = 2
 
 function love.load ()
-	lotsanoiseimg = love.graphics.newImage("lotsanoise.bmp")
+	lotsanoiseimg = love.graphics.newImage("noise-1920x1080.png")
 end
 
 function love.draw ()
@@ -1079,6 +1136,52 @@ end
 function love.update (dt)
 	
 end
+]]
+
+--[[
+-- TV NOISE USING SHADER GLSL
+function love.load ()
+	splash = love.graphics.newImage("futuretech_logo.jpg")
+	tv_shader = love.graphics.newShader[=[
+		// static TV noise (full)
+		float rand2 ( vec2 p ) {
+			// e^pi (Gelfond's constant)
+			// 2^sqrt(2) (Gelfond–Schneider constant)
+			vec2 r = vec2( 23.14069263277926, 2.665144142690225 );
+			//return fract( cos( mod( 12345678., 256. * dot(p,r) ) ) ); // ver1
+			return fract(cos(dot(p,r)) * 123456.); // ver2
+		}
+		float rand1 ( vec2 co) {
+			return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+		}
+		vec4 effect( vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords ){
+			vec4 pixel = Texel(texture, texture_coords );//This is the current pixel color
+			pixel.r = rand1(vec2(texture_coords.x, texture_coords.y));
+			pixel.g = rand1(vec2(texture_coords.x, texture_coords.y));
+			pixel.b = rand1(vec2(texture_coords.x, texture_coords.y));
+			return pixel;
+		}
+		
+		
+	]=]
+	
+end
+
+x = 0
+y = 0
+scale = 10
+
+function love.draw ()
+	love.graphics.setShader(tv_shader) --draw something here
+	--love.graphics.draw(splash, x, y)
+	love.graphics.draw(splash, -math.random()*240, -math.random()*120, 0, scale, scale)	-- use this to see TV noise effect
+	love.graphics.setShader()
+end
+
+function love.update (dt)
+	
+end
+]]
 
 
 --[[
@@ -1171,35 +1274,64 @@ x3 = 0
 scale = 1.0
 
 function love.load ()
-	cloud1 = love.graphics.newImage("kitty/cloud1.png")
-	cloud2 = love.graphics.newImage("kitty/cloud2.png")
-	ground1 = love.graphics.newImage("kitty/ground1.png")
-	ground2 = love.graphics.newImage("kitty/ground2.png")
-	ground3 = love.graphics.newImage("kitty/ground3.png")
-	rock1 = love.graphics.newImage("kitty/rock1.png")
-	sky1 = love.graphics.newImage("kitty/sky1.png")
+	--love.graphics.setDefaultFilter('nearest', 'nearest')
+	love.graphics.setDefaultFilter('linear', 'linear', 16)
 	
+	cloud1 = love.graphics.newImage("kitty/cloud1.png", {['mipmaps']=true})
+	cloud2 = love.graphics.newImage("kitty/cloud2.png", {['mipmaps']=true})
+	ground1 = love.graphics.newImage("kitty/ground1.png", {['mipmaps']=true})
+	ground2 = love.graphics.newImage("kitty/ground2.png", {['mipmaps']=true})
+	ground3 = love.graphics.newImage("kitty/ground3.png", {['mipmaps']=true})
+	rock1 = love.graphics.newImage("kitty/rock1.png", {['mipmaps']=true})
+	sky1 = love.graphics.newImage("kitty/sky1.png", {['mipmaps']=true})
+	--
+	ground1:setFilter('linear', 'linear', 16)
+	ground2:setFilter('linear', 'linear', 16)
+	ground3:setFilter('linear', 'linear', 16)
+	rock1:setFilter('linear', 'linear', 16)
+	
+	--
+	cloud1:setMipmapFilter("linear", 0)
+	cloud2:setMipmapFilter("linear", 0)
+	ground1:setMipmapFilter("linear", 0)
+	ground2:setMipmapFilter("linear", 0)
+	ground3:setMipmapFilter("linear", 0)
+	rock1:setMipmapFilter("linear", 0)
+	sky1:setMipmapFilter("linear", 0)
+	
+	--[=[
+	cloud1:setMipmapFilter("nearest")
+	cloud2:setMipmapFilter("nearest")
+	ground1:setMipmapFilter("nearest")
+	ground2:setMipmapFilter("nearest")
+	ground3:setMipmapFilter("nearest")
+	rock1:setMipmapFilter("nearest")
+	sky1:setMipmapFilter("nearest")
+	]=]
 end
 
 function love.draw ()
-	love.graphics.draw(sky1, 0*scale, 0*scale, 0, scale)
-	--
-	love.graphics.draw(rock1, x2*scale, 160*scale, 0, scale)
-	love.graphics.draw(rock1, (x2+800)*scale, 160*scale, 0, scale)
-	--
-	love.graphics.draw(cloud1, (x3+40)*scale, 10, 0, scale)
-	love.graphics.draw(cloud2, (x3+400)*scale, 40, 0, scale)
 	
-	love.graphics.draw(cloud1, (x3+40+800)*scale, 10, 0, scale)
-	love.graphics.draw(cloud2, (x3+400+800)*scale, 40, 0, scale)
+	love.graphics.scale(scale, scale)
 	--
-	love.graphics.draw(ground1, x1*scale, 336*scale, 0, scale)
-	love.graphics.draw(ground3, x1*scale, 400*scale, 0, scale)
-	love.graphics.draw(ground2, x1*scale, 450*scale, 0, scale)
+	love.graphics.draw(sky1)
+	--
+	love.graphics.draw(rock1, x2, 160)
+	love.graphics.draw(rock1, (x2+800), 160)
+	--
+	love.graphics.draw(cloud1, (x3+40), 10)
+	love.graphics.draw(cloud2, (x3+400), 40)
 	
-	love.graphics.draw(ground1, (x1+800)*scale, 336*scale, 0, scale)
-	love.graphics.draw(ground3, (x1+800)*scale, 400*scale, 0, scale)
-	love.graphics.draw(ground2, (x1+800)*scale, 450*scale, 0, scale)
+	love.graphics.draw(cloud1, (x3+40+800), 10)
+	love.graphics.draw(cloud2, (x3+400+800), 40)
+	--
+	love.graphics.draw(ground1, x1, 336)
+	love.graphics.draw(ground3, x1, 400)
+	love.graphics.draw(ground2, x1, 450)
+	
+	love.graphics.draw(ground1, (x1+800), 336)
+	love.graphics.draw(ground3, (x1+800), 400)
+	love.graphics.draw(ground2, (x1+800), 450)
 end
 
 function love.update (dt)
@@ -1476,3 +1608,73 @@ function love.update (dt)
 	end
 end
 ]]
+
+--[[
+-- BITMAP FONT
+function love.load ()
+	font = love.graphics.newImageFont('font 2.png', ' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
+end
+
+function love.draw ()
+	love.graphics.setFont(font)
+	love.graphics.print('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 16, 16)
+	love.graphics.print('Text is now drawn using the font', 16, 32)
+end
+
+function love.update (dt)
+
+end
+]]
+
+--
+
+-- PLATFORMER EXAMPLE
+function love.load()
+	crate = love.graphics.newImage("crate.fw.png")
+	sky = love.graphics.newImage("sky.fw.png")
+	ground = love.graphics.newImage("ground.fw.png")
+	player = love.graphics.newImage("player.fw.png")
+	
+end
+
+
+x = 300
+y = 0
+
+function love.draw()
+	--love.graphics.rectangle("fill", 0, winH / 2, winW, winH / 2)
+	
+	love.graphics.draw(sky, 0, 0)
+	love.graphics.draw(ground, 0, 0)
+	love.graphics.draw(crate, 50, 308)
+	love.graphics.draw(player, x, y)
+end
+
+
+
+
+function love.update (dt)
+	if love.keyboard.isDown("up") then
+		y = y - 5
+	end
+	if love.keyboard.isDown("down") then
+		y = y + 5
+	end
+	if love.keyboard.isDown("left") then
+		x = x - 5
+	end
+	if love.keyboard.isDown("right") then
+		x = x + 5
+	end
+	
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+
+
+
+
+
+
+
