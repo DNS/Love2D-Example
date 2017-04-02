@@ -29,10 +29,10 @@ radians = degrees * math.pi / 180	-- To convert degrees to radians
 print(123)	-- print with newline
 print("abc")	-- print with newline
 
-io.write(x)	-- print without new line
-write = io.write
-write("ok")
-write("123")
+io.write("abc") 	-- write to STDOUT without newline
+var1 = io.read() 	-- read STDIN, newline terminated
+io.flush()		-- flush IO
+
 
 local var5 = 123	-- local variable
 var6 = 456	-- global  variable, automatically destroyed if out of function scope
@@ -70,7 +70,7 @@ obj = { ["foo"]=555, ["bar"]=888 }	-- hash / assosiative array
 obj["baz"] = 999
 print(obj["foo"])
 
-obj.hello = function (self) 
+obj.hello = function (self)
 	print("hello")
 	print(self.baz)
 end
@@ -80,10 +80,14 @@ obj:hello()		-- automatically pass 'obj' as the first parameter
 
 --loop
 names = {'John', 'Joe', 'Steve'}
-for names = 1, 3 do
-  print (names)
+for i = 1, 3 do
+  print (names[i])
 end
 
+names = {'John', 'Joe', 'Steve'}
+for i = 1,3 do print( names[i] ) end
+
+-- iterate array
 names = {'John', 'Joe', 'Steve'}
 for i, name in ipairs(names) do
   print (name)
@@ -112,19 +116,36 @@ arr =
   pears = { 'p', "green", 7 }
 }
 
+-- iterate key-value
 for k, v in pairs(arr) do
   print(k, v[1], v[2], v[3])
 end
 
+-- iterate array
 d = {1,2,3}
 for _,k in pairs(d) do
 	print(d[k])
 end
 
 var4 = "very large string"
-var4 = nil	-- destroy variable
+var4 = nil	-- destroy variable (call garbage collector to free memory)
 
 require("test2")   -- include file test2.lua
+
+
+-- Lua processes and executes files line by line so the order you define them and use them can be important.
+function test1 ()
+	print ("OK")
+end
+
+test1()
+
+test2 = function ()
+	print ("OK")
+end
+
+test2()
+
 
 -- This is line comment
 
