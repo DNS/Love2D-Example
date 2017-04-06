@@ -1672,27 +1672,29 @@ function love.draw()
 	love.graphics.draw(platform.img, platform.x, platform.y)
 	love.graphics.draw(crate.img, crate.x, crate.y)
 	love.graphics.draw(player.img, player.x, player.y)
+	love.graphics.print(a)
+	love.graphics.print(b, 0, 50)
 end
 
 function love.update (dt)
 	p_speed = 10
 	
 	if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
-		KeyboardMoveCollide(   {player,p_speed,p_speed},  {crate, platform}  )
+		MoveCollide(   {player,p_speed,p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("right") and love.keyboard.isDown("up") then
-		KeyboardMoveCollide(   {player,p_speed,-p_speed},  {crate, platform}  )
+		MoveCollide(   {player,p_speed,-p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("down") then
-		KeyboardMoveCollide(   {player,-p_speed,p_speed},  {crate, platform}  )
+		MoveCollide(   {player,-p_speed,p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("up") then
-		KeyboardMoveCollide(   {player,-p_speed,-p_speed},  {crate, platform}  )
+		MoveCollide(   {player,-p_speed,-p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("down") then
-		KeyboardMoveCollide(   {player,0,p_speed},  {crate, platform}  )
+		MoveCollide(   {player,0,p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("up") then
-		KeyboardMoveCollide(   {player,0,-p_speed},  {crate, platform}  )
+		MoveCollide(   {player,0,-p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("right") then
-		KeyboardMoveCollide(   {player,p_speed,0},  {crate, platform}  )
+		MoveCollide(   {player,p_speed,0},  {crate, platform}  )
 	elseif love.keyboard.isDown("left") then
-		KeyboardMoveCollide(   {player,-p_speed,0},  {crate, platform}  )
+		MoveCollide(   {player,-p_speed,0},  {crate, platform}  )
 	end
 	
 	
@@ -1710,8 +1712,11 @@ function CheckCollision (x1,y1,w1,h1, x2,y2,w2,h2)
 		y2 < y1+h1
 end
 
---function KeyboardMoveCollide (obj1, obj2)
-function KeyboardMoveCollide (p, q)
+a=0
+b=0
+
+-- arg: p={player, x_player_speed, y_player_speed},  q={objects_to_collide, ...} 
+function MoveCollide (p, q)
 	result1 = true
 	result2 = true
 	
@@ -1730,14 +1735,41 @@ function KeyboardMoveCollide (p, q)
 	if result1 and result2 then
 		p[1].x = p[1].x + p[2]
 		p[1].y = p[1].y + p[3]
+		return false	-- not hit
 	elseif result1 and not result2 then
+	
 		if p[2] > 0 and p[3] > 0 then	-- right & down
-			--p[1].x = t.x - p[1].w
-			p[1].y = t.y - p[1].h
+			if p[1].y+p[1].h <= t.y then
+				p[1].x = p[1].x + p[2]
+				p[1].y = t.y - p[1].h
+			else
+				p[1].x = t.x - p[1].w
+				p[1].y = p[1].y + p[3]
+			end
 		elseif p[2] > 0 and p[3] < 0 then	-- right & up
+			if p[1].y >= t.y+t.h then
+				p[1].x = p[1].x + p[2]
+				p[1].y = t.y + t.h
+			else
+				p[1].x = t.x - p[1].w
+				p[1].y = p[1].y + p[3]
+			end
 		elseif p[2] < 0 and p[3] > 0 then	-- left & down
+			if p[1].y+p[1].h <= t.y then
+				p[1].x = p[1].x + p[2]
+				p[1].y = t.y - p[1].h
+			else
+				p[1].x = t.x + t.w
+				p[1].y = p[1].y + p[3]
+			end
 		elseif p[2] < 0 and p[3] < 0 then	-- left & up
-		
+			if p[1].y >= t.y+t.h then
+				p[1].x = p[1].x + p[2]
+				p[1].y = t.y + t.h
+			else
+				p[1].x = t.x + t.w
+				p[1].y = p[1].y + p[3]
+			end
 		elseif p[3] > 0 then		--  down
 			p[1].y = t.y - p[1].h
 		elseif p[3] < 0 then		-- up
@@ -1747,6 +1779,8 @@ function KeyboardMoveCollide (p, q)
 		elseif p[2] > 0 then		-- right
 			p[1].x = t.x - p[1].w
 		end
+		
+		return true	-- collide with other object
 	end
 	
 	
