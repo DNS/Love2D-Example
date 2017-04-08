@@ -1626,12 +1626,12 @@ function love.update (dt)
 end
 ]]
 
---
 
--- PLATFORMER EXAMPLE (RECTANGULAR COLLISION, GRAVITY, KEYBOARD MOVEMENT)
+--[[
+-- MOVE COLLIDER  (RECTANGULAR COLLISION)
 function love.load()
 	crate = {
-		x = 50,
+		x = 150,
 		y = 311,
 		w = 100,
 		h = 100,
@@ -1640,18 +1640,11 @@ function love.load()
 	player = {
 		x = 300,
 		y = 0,
-		w = 21,
-		h = 75,
-		img = love.graphics.newImage("player.fw.png"),
+		w = 80,
+		h = 80,
+		img = love.graphics.newImage("box.png"),
 	}
 	
-	ground = {
-		x = 0,
-		y = 0,
-		w = 800,
-		h = 600,
-		img = love.graphics.newImage("ground.fw.png"),
-	}
 	
 	platform = {
 		x = 500,
@@ -1661,19 +1654,14 @@ function love.load()
 		img = love.graphics.newImage("platform.fw.png"),
 	}
 	
-	sky = love.graphics.newImage("sky.fw.png")
 	
 end
 
-function love.draw()
-	love.graphics.draw(sky, 0, 0)
-	love.graphics.draw(ground.img, 0, 0)
-	
+function love.draw()	
 	love.graphics.draw(platform.img, platform.x, platform.y)
 	love.graphics.draw(crate.img, crate.x, crate.y)
 	love.graphics.draw(player.img, player.x, player.y)
-	love.graphics.print(a)
-	love.graphics.print(b, 0, 50)
+	
 end
 
 function love.update (dt)
@@ -1712,8 +1700,6 @@ function CheckCollision (x1,y1,w1,h1, x2,y2,w2,h2)
 		y2 < y1+h1
 end
 
-a=0
-b=0
 
 -- arg: p={player, x_player_speed, y_player_speed},  q={objects_to_collide, ...} 
 function MoveCollide (p, q)
@@ -1736,6 +1722,7 @@ function MoveCollide (p, q)
 		p[1].x = p[1].x + p[2]
 		p[1].y = p[1].y + p[3]
 		return false	-- not hit
+		
 	elseif result1 and not result2 then
 	
 		if p[2] > 0 and p[3] > 0 then	-- right & down
@@ -1784,37 +1771,180 @@ function MoveCollide (p, q)
 	end
 	
 	
+end
+]]
+
+
+
+
+--
+
+-- PLATFORMER EXAMPLE (RECTANGULAR COLLISION, GRAVITY, KEYBOARD MOVEMENT)
+function love.load()
+	crate = {
+		x = 50,
+		y = 311,
+		w = 100,
+		h = 100,
+		img = love.graphics.newImage("crate.fw.png"),
+	}
+	player = {
+		x = 300,
+		y = 0,
+		w = 21,
+		h = 75,
+		img = love.graphics.newImage("player.fw.png"),
+	}
 	
-	--[[
-	if love.keyboard.isDown("up") then
-		if not CheckCollision (obj1.x,obj1.y-5,obj1.w,obj1.h,  obj2.x,obj2.y,obj2.w,obj2.h) then
-			obj1.y = obj1.y - 5
-		else
-			obj1.y = obj2.y + obj2.h
+	ground = {
+		x = 0,
+		y = 0,
+		w = 800,
+		h = 600,
+		img = love.graphics.newImage("ground.fw.png"),
+	}
+	
+	platform = {
+		x = 500,
+		y = 270,
+		w = 200,
+		h = 30,
+		img = love.graphics.newImage("platform.fw.png"),
+	}
+	
+	sky = love.graphics.newImage("sky.fw.png")
+	
+end
+
+function love.draw()
+	love.graphics.draw(sky, 0, 0)
+	love.graphics.draw(ground.img, 0, 0)
+	
+	love.graphics.draw(platform.img, platform.x, platform.y)
+	love.graphics.draw(crate.img, crate.x, crate.y)
+	love.graphics.draw(player.img, player.x, player.y)
+	love.graphics.print(a)
+	--love.graphics.print(b, 0, 50)
+end
+
+a=0
+
+function love.update (dt)
+	p_speed = 5
+	
+	if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
+		MoveCollide(   {player,p_speed,p_speed},  {crate, platform}  )
+	elseif love.keyboard.isDown("right") and love.keyboard.isDown("up") then
+		MoveCollide(   {player,p_speed,-p_speed},  {crate, platform}  )
+	elseif love.keyboard.isDown("left") and love.keyboard.isDown("down") then
+		MoveCollide(   {player,-p_speed,p_speed},  {crate, platform}  )
+	elseif love.keyboard.isDown("left") and love.keyboard.isDown("up") then
+		MoveCollide(   {player,-p_speed,-p_speed},  {crate, platform}  )
+	elseif love.keyboard.isDown("down") then
+		MoveCollide(   {player,0,p_speed},  {crate, platform}  )
+	elseif love.keyboard.isDown("up") then
+		MoveCollide(   {player,0,-p_speed},  {crate, platform}  )
+	elseif love.keyboard.isDown("right") then
+		MoveCollide(   {player,p_speed,0},  {crate, platform}  )
+	elseif love.keyboard.isDown("left") then
+		MoveCollide(   {player,-p_speed,0},  {crate, platform}  )
+	end
+	
+	
+	
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+
+-- only can check rectangular collider
+function CheckCollision (x1,y1,w1,h1, x2,y2,w2,h2)
+	return x1 < x2+w2 and
+		x2 < x1+w1 and
+		y1 < y2+h2 and
+		y2 < y1+h1
+end
+
+
+-- arg: p={player, x_player_speed, y_player_speed},  q={objects_to_collide, ...} 
+function MoveCollide (p, q)
+	result1 = true
+	result2 = true
+	
+	for i=1,#q do
+		if CheckCollision (p[1].x, p[1].y, p[1].w, p[1].h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+			result1 = false
+			break
+		end
+		if CheckCollision (p[1].x+p[2], p[1].y+p[3], p[1].w, p[1].h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+			result2 = false
+			t = q[i]
+			break
 		end
 	end
-	if love.keyboard.isDown("down") then
-		if not CheckCollision (obj1.x,obj1.y+5,obj1.w,obj1.h,  obj2.x,obj2.y,obj2.w,obj2.h) then
-			obj1.y = obj1.y + 5
-		else
-			obj1.y = obj2.y - obj1.h
+	
+	if result1 and result2 then
+		p[1].x = p[1].x + p[2]
+		p[1].y = p[1].y + p[3]
+		return false	-- not hit
+		
+	elseif result1 and not result2 then
+	
+		if p[2] > 0 and p[3] > 0 then	-- right & down
+			if p[1].y+p[1].h <= t.y then
+				--p[1].x = p[1].x + p[2]
+				p[1].y = t.y - p[1].h
+				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+				
+			else
+				p[1].x = t.x - p[1].w
+				--p[1].y = p[1].y + p[3]
+				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+			end
+		elseif p[2] > 0 and p[3] < 0 then	-- right & up
+			if p[1].y >= t.y+t.h then
+				--p[1].x = p[1].x + p[2]
+				p[1].y = t.y + t.h
+				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+			else
+				p[1].x = t.x - p[1].w
+				--p[1].y = p[1].y + p[3]
+				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+			end
+		elseif p[2] < 0 and p[3] > 0 then	-- left & down
+			if p[1].y+p[1].h <= t.y then
+				--p[1].x = p[1].x + p[2]
+				p[1].y = t.y - p[1].h
+				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+			else
+				p[1].x = t.x + t.w
+				--p[1].y = p[1].y + p[3]
+				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+			end
+		elseif p[2] < 0 and p[3] < 0 then	-- left & up
+			if p[1].y >= t.y+t.h then
+				--p[1].x = p[1].x + p[2]
+				p[1].y = t.y + t.h
+				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+			else
+				p[1].x = t.x + t.w
+				--p[1].y = p[1].y + p[3]
+				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+			end
+		elseif p[3] > 0 then		--  down
+			p[1].y = t.y - p[1].h
+		elseif p[3] < 0 then		-- up
+			p[1].y = t.y + t.h
+		elseif p[2] < 0 then		-- left
+			p[1].x = t.x + t.w
+		elseif p[2] > 0 then		-- right
+			p[1].x = t.x - p[1].w
 		end
+		
+		return true	-- collide with other object
 	end
-	if love.keyboard.isDown("left") then
-		if not CheckCollision (obj1.x-5,obj1.y,obj1.w,obj1.h,  obj2.x,obj2.y,obj2.w,obj2.h) then
-			obj1.x = obj1.x - 5
-		else
-			obj1.x = obj2.x + obj2.w
-		end
-	end
-	if love.keyboard.isDown("right") then
-		if not CheckCollision (obj1.x+5,obj1.y,obj1.w,obj1.h,  obj2.x,obj2.y,obj2.w,obj2.h) then
-			obj1.x = obj1.x + 5
-		else
-			obj1.x = obj2.x - obj1.w
-		end
-	end
-	]]
+	
+	
 end
 
 
