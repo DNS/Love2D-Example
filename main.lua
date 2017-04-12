@@ -1786,6 +1786,7 @@ function love.load()
 		y = 311,
 		w = 100,
 		h = 100,
+		type = 'RECT',
 		img = love.graphics.newImage("crate.fw.png"),
 	}
 	player = {
@@ -1793,6 +1794,7 @@ function love.load()
 		y = 0,
 		w = 21,
 		h = 75,
+		type = 'RECT',
 		img = love.graphics.newImage("player.fw.png"),
 	}
 	
@@ -1801,6 +1803,7 @@ function love.load()
 		y = 0,
 		w = 800,
 		h = 600,
+		type = 'RECT',
 		img = love.graphics.newImage("ground.fw.png"),
 	}
 	
@@ -1809,6 +1812,7 @@ function love.load()
 		y = 270,
 		w = 200,
 		h = 30,
+		type = 'RECT',
 		img = love.graphics.newImage("platform.fw.png"),
 	}
 	
@@ -1817,9 +1821,9 @@ function love.load()
 		y = 400,
 		w = 194,
 		h = 167,
-		p1 = {0, 167},
-		p2 = {194, 167},
-		p3 = {97, 0},
+		type = 'POLY',
+		--points = { {x=0,y=167}, {x=194,y=167}, {x=97,y=0} },
+		points = { {x=0+400,y=167+400}, {x=194+400,y=167+400}, {x=97+400,y=0+400} },
 		img = love.graphics.newImage("triangle.fw.png"),
 	}
 	
@@ -1837,6 +1841,7 @@ function love.draw()
 	love.graphics.draw(player.img, player.x, player.y)
 	if not result1 then love.graphics.print("not result1") end
 	if not result2 then love.graphics.print("not result2", 0, 50) end
+	love.graphics.print(debug_str, 0, 100)
 	--love.graphics.print(b, 0, 50)
 end
 
@@ -1922,7 +1927,8 @@ function CollisionPolygon (p, q)
 			end
 			
 		else
-			--print (333)
+			print (333)
+			--print (p.x, p.y, '|', q[a].x, q[a].y)
 			-- y = (x-x1)/(x2-x1) * (y2-y1) + y1
 			y_cmp1 = (q[c].x-q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
 			y_cmp2 = (p.x    -q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
@@ -1945,6 +1951,7 @@ end
 
 result1 = true
 result2 = true
+debug_str = ''
 
 function CollisionRectangle (p1, p2, q1, q2)
 	local r
@@ -1975,22 +1982,34 @@ end
 function MoveCollide (p, xm, ym, q)
 	result1 = true
 	result2 = true
+	debug_str = ''
 	
 	for i=1,#q do
 		--if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 		--z = CollisionRectangle ({x=p.x, y=p.y}, {x=p.w, y=p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].w, y=q[i].h})
 		--print (z)
-		if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
-			--print (111)
-			result1 = false
-			break
-		end
-		--if checkCollisionRectangle (p.x+xm, p.y+ym, p.w+xm, p.h+ym,    q[i].x, q[i].y, q[i].w, q[i].h) then
-		if CollisionRectangle ({x=p.x+xm, y=p.y+ym}, {x=p.x+p.w+xm, y=p.y+p.h+ym}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
-			--print (222)
-			result2 = false
-			t = q[i]
-			break
+		if q[i].type == 'RECT' then
+			if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+				--print (111)
+				result1 = false
+				break
+			end
+			--if checkCollisionRectangle (p.x+xm, p.y+ym, p.w+xm, p.h+ym,    q[i].x, q[i].y, q[i].w, q[i].h) then
+			if CollisionRectangle ({x=p.x+xm, y=p.y+ym}, {x=p.x+p.w+xm, y=p.y+p.h+ym}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+				--print (222)
+				result2 = false
+				t = q[i]
+				break
+			end
+		elseif q[i].type == 'POLY' then
+			
+			if CollisionPolygon ({x=p.x, y=p.y}, q[i].points) then
+				--print (q[i].points)
+				debug_str = 'POLY'
+				result1 = false
+				--t = q[i]
+				break
+			end
 		end
 	end
 	
