@@ -1812,6 +1812,17 @@ function love.load()
 		img = love.graphics.newImage("platform.fw.png"),
 	}
 	
+	triangle = {
+		x = 400,
+		y = 400,
+		w = 194,
+		h = 167,
+		p1 = {0, 167},
+		p2 = {194, 167},
+		p3 = {97, 0},
+		img = love.graphics.newImage("triangle.fw.png"),
+	}
+	
 	sky = love.graphics.newImage("sky.fw.png")
 	
 end
@@ -1822,61 +1833,251 @@ function love.draw()
 	
 	love.graphics.draw(platform.img, platform.x, platform.y)
 	love.graphics.draw(crate.img, crate.x, crate.y)
+	love.graphics.draw(triangle.img, triangle.x, triangle.y)
 	love.graphics.draw(player.img, player.x, player.y)
-	love.graphics.print(a)
+	if not result1 then love.graphics.print("not result1") end
+	if not result2 then love.graphics.print("not result2", 0, 50) end
 	--love.graphics.print(b, 0, 50)
 end
 
-a=0
 
 function love.update (dt)
-	p_speed = 5
+	p_speed = 7
+	obj_collide = {crate, platform, triangle}
 	
 	if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
-		MoveCollide(   {player,p_speed,p_speed},  {crate, platform}  )
+		MoveCollide(   player,p_speed,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("right") and love.keyboard.isDown("up") then
-		MoveCollide(   {player,p_speed,-p_speed},  {crate, platform}  )
+		MoveCollide(   player,p_speed,-p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("down") then
-		MoveCollide(   {player,-p_speed,p_speed},  {crate, platform}  )
+		MoveCollide(   player,-p_speed,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("up") then
-		MoveCollide(   {player,-p_speed,-p_speed},  {crate, platform}  )
+		MoveCollide(   player,-p_speed,-p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("down") then
-		MoveCollide(   {player,0,p_speed},  {crate, platform}  )
+		MoveCollide(   player,0,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("up") then
-		MoveCollide(   {player,0,-p_speed},  {crate, platform}  )
+		MoveCollide(   player,0,-p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("right") then
-		MoveCollide(   {player,p_speed,0},  {crate, platform}  )
+		MoveCollide(   player,p_speed,0,  obj_collide  )
 	elseif love.keyboard.isDown("left") then
-		MoveCollide(   {player,-p_speed,0},  {crate, platform}  )
+		MoveCollide(   player,-p_speed,0,  obj_collide  )
 	end
-	
-	
 	
 	if love.keyboard.isDown("escape") then
 		love.event.quit()
 	end
 end
-
--- only can check rectangular collider
-function CheckCollision (x1,y1,w1,h1, x2,y2,w2,h2)
+--[[
+-- check whether two rectangular objects overlap
+function checkCollisionRectangle (x1,y1,w1,h1, x2,y2,w2,h2)
 	return x1 < x2+w2 and
 		x2 < x1+w1 and
 		y1 < y2+h2 and
 		y2 < y1+h1
 end
+]]
+-- ax, ay = circleA's center coordinates; bx, by = circleB's center coordinates; ar, br = circleA's and circleB's radii, respectively. 
+function checkCollisionCircular (ax, ay, bx, by, ar, br)
+	local dx = bx - ax
+	local dy = by - ay
+	return dx^2 + dy^2 < (ar + br)^2
+end
 
 
--- arg: p={player, x_player_speed, y_player_speed},  q={objects_to_collide, ...} 
-function MoveCollide (p, q)
+
+-- return false if not hit & return table with 2 points (line) if hit
+function CollisionPolygon (p, q)
+	local r = false
+	local i, a, b, c
+	local y_cmp1, y_cmp2
+	
+	for i=1, #q do
+		a = i
+		b = i+1
+		c = i+2
+		if i == #q-1 then
+			c = 1
+		elseif i == #q then
+			b = 1
+			c = 2
+		end
+		
+		if q[a].x == q[b].x then
+			--print (111)
+			if q[a].x > q[c].x and q[a].x < p.x then
+				return false
+				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
+			elseif q[a].x < q[c].x and q[a].x > p.x then
+				return false
+				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
+			end
+		elseif q[a].y == q[b].y then
+			--print (222)
+			if q[a].y > q[c].y and q[a].y < p.y then
+				return false
+				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
+			elseif q[a].y < q[c].y and q[a].y > p.y then
+				return false
+				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
+			end
+			
+		else
+			--print (333)
+			-- y = (x-x1)/(x2-x1) * (y2-y1) + y1
+			y_cmp1 = (q[c].x-q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
+			y_cmp2 = (p.x    -q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
+			--print (q[a].x, q[a].y, q[b].x, q[b].y)
+			if y_cmp1 < q[c].y and y_cmp2 > p.y then
+				return false
+				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
+			elseif y_cmp1 > q[c].y and y_cmp2 < p.y then
+				return false
+				--print (y_cmp1, q[c].y)
+				--print (y_cmp2, p.y)
+				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
+			end
+		end
+		
+	end		-- for
+	
+	return true	-- hit
+end
+
+result1 = true
+result2 = true
+
+function CollisionRectangle (p1, p2, q1, q2)
+	local r
+	r = CollisionPolygon ( {x=p1.x,y=p1.y}, {{x=q1.x,y=q1.y}, {x=q2.x,y=q1.y}, {x=q2.x,y=q2.y}, {x=q1.x,y=q2.y}}  )
+	if r ~= false then return r end
+	r = CollisionPolygon ( {x=p1.x,y=p2.y}, {{x=q1.x,y=q1.y}, {x=q2.x,y=q1.y}, {x=q2.x,y=q2.y}, {x=q1.x,y=q2.y}}  )
+	if r ~= false then return r end
+	r = CollisionPolygon ( {x=p2.x,y=p1.y}, {{x=q1.x,y=q1.y}, {x=q2.x,y=q1.y}, {x=q2.x,y=q2.y}, {x=q1.x,y=q2.y}}  )
+	if r ~= false then return r end
+	r = CollisionPolygon ( {x=p2.x,y=p2.y}, {{x=q1.x,y=q1.y}, {x=q2.x,y=q1.y}, {x=q2.x,y=q2.y}, {x=q1.x,y=q2.y}}  )
+	if r ~= false then return r end
+	--
+	-- swap to check if the first rectangle is smaller
+	r = CollisionPolygon ( {x=q1.x,y=q1.y}, {{x=p1.x,y=p1.y}, {x=p2.x,y=p1.y}, {x=p2.x,y=p2.y}, {x=p1.x,y=p2.y}}  )
+	if r ~= false then return r end
+	r = CollisionPolygon ( {x=q1.x,y=q2.y}, {{x=p1.x,y=p1.y}, {x=p2.x,y=p1.y}, {x=p2.x,y=p2.y}, {x=p1.x,y=p2.y}}  )
+	if r ~= false then return r end
+	r = CollisionPolygon ( {x=q2.x,y=q1.y}, {{x=p1.x,y=p1.y}, {x=p2.x,y=p1.y}, {x=p2.x,y=p2.y}, {x=p1.x,y=p2.y}}  )
+	if r ~= false then return r end
+	r = CollisionPolygon ( {x=q2.x,y=q2.y}, {{x=p1.x,y=p1.y}, {x=p2.x,y=p1.y}, {x=p2.x,y=p2.y}, {x=p1.x,y=p2.y}}  )
+	if r ~= false then return r end
+	
+	return r
+end
+
+
+-- arg: ( player_object, x_move, y_move, other_object_to_collide )
+function MoveCollide (p, xm, ym, q)
 	result1 = true
 	result2 = true
 	
 	for i=1,#q do
-		if CheckCollision (p[1].x, p[1].y, p[1].w, p[1].h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+		--if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+		--z = CollisionRectangle ({x=p.x, y=p.y}, {x=p.w, y=p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].w, y=q[i].h})
+		--print (z)
+		if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+			--print (111)
 			result1 = false
 			break
 		end
-		if CheckCollision (p[1].x+p[2], p[1].y+p[3], p[1].w, p[1].h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+		--if checkCollisionRectangle (p.x+xm, p.y+ym, p.w+xm, p.h+ym,    q[i].x, q[i].y, q[i].w, q[i].h) then
+		if CollisionRectangle ({x=p.x+xm, y=p.y+ym}, {x=p.x+p.w+xm, y=p.y+p.h+ym}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+			--print (222)
+			result2 = false
+			t = q[i]
+			break
+		end
+	end
+	
+	p.x = p.x + xm
+	p.y = p.y + ym
+	--print (result1, result2)
+	--[[
+	if result1 and result2 then
+		--print (444)
+		p.x = p.x + xm
+		p.y = p.y + ym
+		return false	-- not hit
+		
+	elseif result1 and not result2 then
+		--print (555)
+		if xm > 0 and ym > 0 then	-- right & down
+			if p.y+p.h <= t.y then
+				p.x = p.x + xm
+				p.y = t.y - p.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
+				
+			else
+				p.x = t.x - p.w
+				p.y = p.y + ym
+				--p.y = p.y + (p.y+ym+p.h - (p.y+p.h)) / xm * ym
+			end
+		elseif xm > 0 and ym < 0 then	-- right & up
+			if p.y >= t.y+t.h then
+				p.x = p.x + xm
+				p.y = t.y + t.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
+			else
+				p.x = t.x - p.w
+				p.y = p.y + ym
+				--p.y = p.y - (p.y+ym+p.h - (p.y+p.h)) / xm * ym
+			end
+		elseif xm < 0 and ym > 0 then	-- left & down
+			if p.y+p.h <= t.y then
+				p.x = p.x + xm
+				p.y = t.y - p.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
+			else
+				p.x = t.x + t.w
+				p.y = p.y + ym
+				--p.y = p.y - (p.y+ym+p.h - (p.y+p.h)) / xm * ym
+			end
+		elseif xm < 0 and ym < 0 then	-- left & up
+			if p.y >= t.y+t.h then
+				p.x = p.x + xm
+				p.y = t.y + t.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
+			else
+				p.x = t.x + t.w
+				p.y = p.y + ym
+				--p.y = p.y + (p.y+ym+p.h - (p.y+p.h)) / xm * ym
+			end
+		elseif ym > 0 then		--  down
+			p.y = t.y - p.h
+		elseif ym < 0 then		-- up
+			p.y = t.y + t.h
+		elseif xm < 0 then		-- left
+			p.x = t.x + t.w
+		elseif xm > 0 then		-- right
+			p.x = t.x - p.w
+		end
+		
+		return true	-- collide with other object
+	else
+		return false	-- result1 & result 2 == false
+	end
+	]]
+end
+
+
+
+--[[
+-- arg: ( player_object, x_move, y_move, other_object_to_collide )
+function MoveCollide (p, xm, ym, q)
+	result1 = true
+	result2 = true
+	
+	for i=1,#q do
+		if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+			result1 = false
+			break
+		end
+		if checkCollisionRectangle (p.x+xm, p.y+ym, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 			result2 = false
 			t = q[i]
 			break
@@ -1884,68 +2085,69 @@ function MoveCollide (p, q)
 	end
 	
 	if result1 and result2 then
-		p[1].x = p[1].x + p[2]
-		p[1].y = p[1].y + p[3]
+		p.x = p.x + xm
+		p.y = p.y + ym
 		return false	-- not hit
 		
 	elseif result1 and not result2 then
 	
-		if p[2] > 0 and p[3] > 0 then	-- right & down
-			if p[1].y+p[1].h <= t.y then
-				--p[1].x = p[1].x + p[2]
-				p[1].y = t.y - p[1].h
-				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+		if xm > 0 and ym > 0 then	-- right & down
+			if p.y+p.h <= t.y then
+				p.x = p.x + xm
+				p.y = t.y - p.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
 				
 			else
-				p[1].x = t.x - p[1].w
-				--p[1].y = p[1].y + p[3]
-				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+				p.x = t.x - p.w
+				p.y = p.y + ym
+				--p.y = p.y + (p.y+ym+p.h - (p.y+p.h)) / xm * ym
 			end
-		elseif p[2] > 0 and p[3] < 0 then	-- right & up
-			if p[1].y >= t.y+t.h then
-				--p[1].x = p[1].x + p[2]
-				p[1].y = t.y + t.h
-				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+		elseif xm > 0 and ym < 0 then	-- right & up
+			if p.y >= t.y+t.h then
+				p.x = p.x + xm
+				p.y = t.y + t.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
 			else
-				p[1].x = t.x - p[1].w
-				--p[1].y = p[1].y + p[3]
-				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+				p.x = t.x - p.w
+				p.y = p.y + ym
+				--p.y = p.y - (p.y+ym+p.h - (p.y+p.h)) / xm * ym
 			end
-		elseif p[2] < 0 and p[3] > 0 then	-- left & down
-			if p[1].y+p[1].h <= t.y then
-				--p[1].x = p[1].x + p[2]
-				p[1].y = t.y - p[1].h
-				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+		elseif xm < 0 and ym > 0 then	-- left & down
+			if p.y+p.h <= t.y then
+				p.x = p.x + xm
+				p.y = t.y - p.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
 			else
-				p[1].x = t.x + t.w
-				--p[1].y = p[1].y + p[3]
-				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+				p.x = t.x + t.w
+				p.y = p.y + ym
+				--p.y = p.y - (p.y+ym+p.h - (p.y+p.h)) / xm * ym
 			end
-		elseif p[2] < 0 and p[3] < 0 then	-- left & up
-			if p[1].y >= t.y+t.h then
-				--p[1].x = p[1].x + p[2]
-				p[1].y = t.y + t.h
-				p[1].x = p[1].x + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[3] * p[2]
+		elseif xm < 0 and ym < 0 then	-- left & up
+			if p.y >= t.y+t.h then
+				p.x = p.x + xm
+				p.y = t.y + t.h
+				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
 			else
-				p[1].x = t.x + t.w
-				--p[1].y = p[1].y + p[3]
-				p[1].y = p[1].y + (p[1].y+p[3]+p[1].h - (p[1].y+p[1].h)) / p[2] * p[3]
+				p.x = t.x + t.w
+				p.y = p.y + ym
+				--p.y = p.y + (p.y+ym+p.h - (p.y+p.h)) / xm * ym
 			end
-		elseif p[3] > 0 then		--  down
-			p[1].y = t.y - p[1].h
-		elseif p[3] < 0 then		-- up
-			p[1].y = t.y + t.h
-		elseif p[2] < 0 then		-- left
-			p[1].x = t.x + t.w
-		elseif p[2] > 0 then		-- right
-			p[1].x = t.x - p[1].w
+		elseif ym > 0 then		--  down
+			p.y = t.y - p.h
+		elseif ym < 0 then		-- up
+			p.y = t.y + t.h
+		elseif xm < 0 then		-- left
+			p.x = t.x + t.w
+		elseif xm > 0 then		-- right
+			p.x = t.x - p.w
 		end
 		
 		return true	-- collide with other object
+	else
+		return false	-- result1 & result 2 == false
 	end
 	
-	
 end
-
+]]
 
 
