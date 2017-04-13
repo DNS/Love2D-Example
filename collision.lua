@@ -188,15 +188,54 @@ function LineCollisionLine (lineA,lineB,line2A,line2B)
 end
 
 
+
+
+function LineCollisionLine2 (p1,p2,q1,q2)
+	local x1, y1, x2, y2
+	local x3, y3, x4, y4
+	
+	x1 = p1.x
+	y1 = p1.y
+	x2 = p2.x
+	y2 = p2.y
+	
+	x3 = q1.x
+	y3 = q1.y
+	x4 = q2.x
+	y4 = q2.y
+	
+	if (x1-x2)*(y3*-y4) - (y1-y2)*(x3-x4) == 0 then
+		print ("zero")
+		return
+	elseif  then	-- overlapping ???
+		
+	else
+		x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+		y = ( (x1*y2-y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
+		print (x, y)
+		return
+	end
+	
+	
+
+	
+
+	
+end
+
 --a = PointCollisionRectangle ({x=0,y=0}, {x=1,y=1}, {x=0,y=0}, {x=5,y=7})
 --a = PointCollisionRectangle ({x=0,y=0}, {x=200,y=200},  {x=-1,y=-1}, {x=-2,y=-2})
 --300	0	21	75	500	270	200	30
 
 --LineCollisionPolygon ( {{x=1,y=1}, {x=2,y=2}},    {{x=1,y=1}, {x=4,y=3}, {x=3,y=5}}  )
 
+--a = LineCollisionLine ( {x=1,y=1},{x=2,y=2},  {x=1,y=2},{x=2,y=1} )
+--print (a)
+--a = LineCollisionLine2 ({x=1,y=1},{x=2,y=2},  {x=1,y=2},{x=2,y=1})
+--a = LineCollisionLine2 ({x=0,y=0},{x=0,y=5},  {x=1,y=0},{x=1,y=5})
+a = LineCollisionLine2 ({x=0,y=0},{x=10,y=10},  {x=-1,y=-1},{x=5,y=5})
+--print (a)
 
-a = LineCollisionLine ( {x=1,y=1},{x=2,y=2},  {x=1,y=2},{x=2,y=1} )
-print (a)
 
 
 
