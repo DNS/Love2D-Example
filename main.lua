@@ -3,7 +3,7 @@
 function love.load()
 	splash = love.graphics.newImage("futuretech_logo.jpg")
 
-	--sound = love.audio.newSource("Bob Marley - No Woman No Cry.mp3")
+	--sound = love.audio.newSource("JKT48 - River.mp3")
 	--love.audio.play(sound)
 end
 
@@ -1628,6 +1628,23 @@ end
 
 
 --[[
+-- LOAD & PLAY VIDEO (.OGV only)
+function love.load ()
+	video = love.graphics.newVideo("Kamen Joshi - GENKIDANE.ogv")
+	video:play()
+end
+
+function love.draw ()
+	love.graphics.draw(video, 0, 0)
+end
+
+function love.update (dt)
+
+end
+]]
+
+
+--[[
 -- MOVE COLLIDER  (RECTANGULAR COLLISION)
 function love.load()
 	crate = {
@@ -1777,7 +1794,12 @@ end
 
 
 
---
+jumping = false
+touch_ground = false
+
+JUMP_HEIGHT = 100
+
+
 
 -- PLATFORMER EXAMPLE (RECTANGULAR COLLISION, GRAVITY, KEYBOARD MOVEMENT)
 function love.load()
@@ -1800,10 +1822,10 @@ function love.load()
 	
 	ground = {
 		x = 0,
-		y = 0,
+		y = 400,
 		w = 800,
-		h = 600,
-		type = 'RECT',
+		h = 200,
+		type = 'GROUND',
 		img = love.graphics.newImage("ground.fw.png"),
 	}
 	
@@ -1812,7 +1834,7 @@ function love.load()
 		y = 270,
 		w = 200,
 		h = 30,
-		type = 'RECT',
+		type = 'PLATFORM',
 		img = love.graphics.newImage("platform.fw.png"),
 	}
 	
@@ -1828,12 +1850,15 @@ function love.load()
 	}
 	
 	sky = love.graphics.newImage("sky.fw.png")
+	--sound = love.audio.newSource("JKT48 - River.mp3")
+	--love.audio.play(sound)
 	
+    
 end
 
 function love.draw()
 	love.graphics.draw(sky, 0, 0)
-	love.graphics.draw(ground.img, 0, 0)
+	love.graphics.draw(ground.img, ground.x, ground.y)
 	
 	love.graphics.draw(platform.img, platform.x, platform.y)
 	love.graphics.draw(crate.img, crate.x, crate.y)
@@ -1843,14 +1868,19 @@ function love.draw()
 	if not result2 then love.graphics.print("not result2", 0, 50) end
 	love.graphics.print(debug_str, 0, 100)
 	--love.graphics.print(b, 0, 50)
+	
 end
 
 
 function love.update (dt)
 	p_speed = 7
-	obj_collide = {crate, platform, triangle}
+	obj_collide = {crate, platform, triangle, ground}
 	
-	if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
+	AddGravity(player, obj_collide)
+	IsGround(player, obj_collide)
+	IsJumping(player, obj_collide)
+	
+	--[[if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
 		MoveCollide(   player,p_speed,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("right") and love.keyboard.isDown("up") then
 		MoveCollide(   player,p_speed,-p_speed,  obj_collide  )
@@ -1858,10 +1888,14 @@ function love.update (dt)
 		MoveCollide(   player,-p_speed,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("up") then
 		MoveCollide(   player,-p_speed,-p_speed,  obj_collide  )
-	elseif love.keyboard.isDown("down") then
+	elseif love.keyboard.isDown("down") then]]
+	if love.keyboard.isDown("down") then
 		MoveCollide(   player,0,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("up") then
-		MoveCollide(   player,0,-p_speed,  obj_collide  )
+		--MoveCollide(   player,0,-p_speed,  obj_collide  )
+		if not jumping and touch_ground then
+			AddJump(player, obj_collide)
+		end
 	elseif love.keyboard.isDown("right") then
 		MoveCollide(   player,p_speed,0,  obj_collide  )
 	elseif love.keyboard.isDown("left") then
@@ -1909,19 +1943,19 @@ function CollisionPolygon (p, q)
 		
 		if q[a].x == q[b].x then
 			--print (111)
-			if q[a].x > q[c].x and q[a].x < p.x then
+			if q[a].x > q[c].x and q[a].x <= p.x then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
-			elseif q[a].x < q[c].x and q[a].x > p.x then
+			elseif q[a].x < q[c].x and q[a].x >= p.x then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
 			end
 		elseif q[a].y == q[b].y then
 			--print (222)
-			if q[a].y > q[c].y and q[a].y < p.y then
+			if q[a].y > q[c].y and q[a].y <= p.y then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
-			elseif q[a].y < q[c].y and q[a].y > p.y then
+			elseif q[a].y < q[c].y and q[a].y >= p.y then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
 			end
@@ -1933,10 +1967,10 @@ function CollisionPolygon (p, q)
 			y_cmp1 = (q[c].x-q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
 			y_cmp2 = (p.x    -q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
 			--print (q[a].x, q[a].y, q[b].x, q[b].y)
-			if y_cmp1 < q[c].y and y_cmp2 > p.y then
+			if y_cmp1 < q[c].y and y_cmp2 >= p.y then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
-			elseif y_cmp1 > q[c].y and y_cmp2 < p.y then
+			elseif y_cmp1 > q[c].y and y_cmp2 <= p.y then
 				return false
 				--print (y_cmp1, q[c].y)
 				--print (y_cmp2, p.y)
@@ -1951,7 +1985,7 @@ end
 
 result1 = true
 result2 = true
-debug_str = ''
+debug_str = ""
 
 function CollisionRectangle (p1, p2, q1, q2)
 	local r
@@ -1980,15 +2014,15 @@ end
 
 -- arg: ( player_object, x_move, y_move, other_object_to_collide )
 function MoveCollide (p, xm, ym, q)
-	result1 = true
-	result2 = true
+	local result1 = true
+	local result2 = true
 	debug_str = ''
 	
 	for i=1,#q do
 		--if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 		--z = CollisionRectangle ({x=p.x, y=p.y}, {x=p.w, y=p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].w, y=q[i].h})
 		--print (z)
-		if q[i].type == 'RECT' then
+		if q[i].type == 'RECT' or q[i].type == 'GROUND' then
 			if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
 				--print (111)
 				result1 = false
@@ -2001,8 +2035,8 @@ function MoveCollide (p, xm, ym, q)
 				t = q[i]
 				break
 			end
-		elseif q[i].type == 'POLY' then
-			
+		elseif q[i].type == 'GROUND' then
+			--[[
 			if CollisionPolygon ({x=p.x, y=p.y}, q[i].points) then
 				--print (q[i].points)
 				debug_str = 'POLY'
@@ -2010,13 +2044,14 @@ function MoveCollide (p, xm, ym, q)
 				--t = q[i]
 				break
 			end
+			]]
 		end
 	end
 	
-	p.x = p.x + xm
-	p.y = p.y + ym
+	
+	
 	--print (result1, result2)
-	--[[
+	--
 	if result1 and result2 then
 		--print (444)
 		p.x = p.x + xm
@@ -2024,92 +2059,7 @@ function MoveCollide (p, xm, ym, q)
 		return false	-- not hit
 		
 	elseif result1 and not result2 then
-		--print (555)
-		if xm > 0 and ym > 0 then	-- right & down
-			if p.y+p.h <= t.y then
-				p.x = p.x + xm
-				p.y = t.y - p.h
-				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
-				
-			else
-				p.x = t.x - p.w
-				p.y = p.y + ym
-				--p.y = p.y + (p.y+ym+p.h - (p.y+p.h)) / xm * ym
-			end
-		elseif xm > 0 and ym < 0 then	-- right & up
-			if p.y >= t.y+t.h then
-				p.x = p.x + xm
-				p.y = t.y + t.h
-				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
-			else
-				p.x = t.x - p.w
-				p.y = p.y + ym
-				--p.y = p.y - (p.y+ym+p.h - (p.y+p.h)) / xm * ym
-			end
-		elseif xm < 0 and ym > 0 then	-- left & down
-			if p.y+p.h <= t.y then
-				p.x = p.x + xm
-				p.y = t.y - p.h
-				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
-			else
-				p.x = t.x + t.w
-				p.y = p.y + ym
-				--p.y = p.y - (p.y+ym+p.h - (p.y+p.h)) / xm * ym
-			end
-		elseif xm < 0 and ym < 0 then	-- left & up
-			if p.y >= t.y+t.h then
-				p.x = p.x + xm
-				p.y = t.y + t.h
-				--p.x = p.x + (p.y+ym+p.h - (p.y+p.h)) / ym * xm
-			else
-				p.x = t.x + t.w
-				p.y = p.y + ym
-				--p.y = p.y + (p.y+ym+p.h - (p.y+p.h)) / xm * ym
-			end
-		elseif ym > 0 then		--  down
-			p.y = t.y - p.h
-		elseif ym < 0 then		-- up
-			p.y = t.y + t.h
-		elseif xm < 0 then		-- left
-			p.x = t.x + t.w
-		elseif xm > 0 then		-- right
-			p.x = t.x - p.w
-		end
-		
-		return true	-- collide with other object
-	else
-		return false	-- result1 & result 2 == false
-	end
-	]]
-end
-
-
-
---[[
--- arg: ( player_object, x_move, y_move, other_object_to_collide )
-function MoveCollide (p, xm, ym, q)
-	result1 = true
-	result2 = true
-	
-	for i=1,#q do
-		if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
-			result1 = false
-			break
-		end
-		if checkCollisionRectangle (p.x+xm, p.y+ym, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
-			result2 = false
-			t = q[i]
-			break
-		end
-	end
-	
-	if result1 and result2 then
-		p.x = p.x + xm
-		p.y = p.y + ym
-		return false	-- not hit
-		
-	elseif result1 and not result2 then
-	
+		--
 		if xm > 0 and ym > 0 then	-- right & down
 			if p.y+p.h <= t.y then
 				p.x = p.x + xm
@@ -2167,6 +2117,26 @@ function MoveCollide (p, xm, ym, q)
 	end
 	
 end
-]]
+
+
+function AddGravity (mov_obj, static_obj)
+	if not jumping then
+		MoveCollide(mov_obj, 0, 5, static_obj)
+	end
+end
+
+function AddJump (mov_obj, static_obj)
+	jumping = true
+	jump_height = JUMP_HEIGHT
+end
+
+function IsJumping (mov_obj, static_obj)
+	if jumping and jump_height > 0 then
+		jump_height = jump_height - 10
+		MoveCollide(mov_obj, 0, -10, static_obj)
+	else
+		jumping = false
+	end
+end
 
 

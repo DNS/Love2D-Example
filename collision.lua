@@ -16,26 +16,26 @@ function PointCollisionPolygon (p, q)
 			c = 2
 		end
 		
-		if q[a].x == q[b].x then
+		if q[a].x == q[b].x then		-- 90 degree
 			--print (111)
-			if q[a].x > q[c].x and q[a].x < p.x then
+			if q[a].x > q[c].x and q[a].x <= p.x then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
-			elseif q[a].x < q[c].x and q[a].x > p.x then
+			elseif q[a].x < q[c].x and q[a].x >= p.x then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
 			end
-		elseif q[a].y == q[b].y then
+		elseif q[a].y == q[b].y then	-- 90 degree
 			--print (222)
-			if q[a].y > q[c].y and q[a].y < p.y then
+			if q[a].y > q[c].y and q[a].y <= p.y then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
-			elseif q[a].y < q[c].y and q[a].y > p.y then
+			elseif q[a].y < q[c].y and q[a].y >= p.y then
 				return false
 				--return { {x=q[a].x, y=q[a].y},  {x=q[b].x, y=q[b].y} }
 			end
 			
-		else
+		else							-- not 90 degree
 			--print (333)
 			-- y = (x-x1)/(x2-x1) * (y2-y1) + y1
 			y_cmp1 = (q[c].x-q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
@@ -207,7 +207,7 @@ function LineCollisionLine2 (p1,p2,q1,q2)
 	if (x1-x2)*(y3*-y4) - (y1-y2)*(x3-x4) == 0 then
 		print ("zero")
 		return
-	elseif  then	-- overlapping ???
+	--elseif  then	-- overlapping ???
 		
 	else
 		x = ( (x1*y2-y1*x2)*(x3-x4) - (x1-x2)*(x3*y4-y3*x4) ) / ( (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4) )
@@ -223,7 +223,16 @@ function LineCollisionLine2 (p1,p2,q1,q2)
 	
 end
 
---a = PointCollisionRectangle ({x=0,y=0}, {x=1,y=1}, {x=0,y=0}, {x=5,y=7})
+
+function checkCollisionRectangle (x1,y1,w1,h1, x2,y2,w2,h2)
+	return x1 < x2+w2 and
+		x2 < x1+w1 and
+		y1 < y2+h2 and
+		y2 < y1+h1
+end
+
+
+a = PointCollisionRectangle ({x=0,y=0}, {x=1,y=1}, {x=1,y=1}, {x=2,y=2})
 --a = PointCollisionRectangle ({x=0,y=0}, {x=200,y=200},  {x=-1,y=-1}, {x=-2,y=-2})
 --300	0	21	75	500	270	200	30
 
@@ -233,9 +242,10 @@ end
 --print (a)
 --a = LineCollisionLine2 ({x=1,y=1},{x=2,y=2},  {x=1,y=2},{x=2,y=1})
 --a = LineCollisionLine2 ({x=0,y=0},{x=0,y=5},  {x=1,y=0},{x=1,y=5})
-a = LineCollisionLine2 ({x=0,y=0},{x=10,y=10},  {x=-1,y=-1},{x=5,y=5})
+--a = LineCollisionLine2 ({x=0,y=0},{x=10,y=10},  {x=-1,y=-1},{x=5,y=5})
 --print (a)
 
-
+--a = checkCollisionRectangle (0,0,1,1, 0,0,2,2)
+print (a)
 
 
