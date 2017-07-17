@@ -382,7 +382,7 @@ function love.load()
 		y_velocity = 0,
 		jetpack_fuel = 0.5, -- Note: not an actual jetpack. Variable is the time (in seconds) you can hold spacebar and jump higher.
 		jetpack_fuel_max = 0.5,
-		image = love.graphics.newImage("[.png") -- Let's just re-use this sprite
+		image = love.graphics.newImage("orang.png") -- Let's just re-use this sprite
 	}
 	
 	gravity = 1000
@@ -1793,19 +1793,18 @@ end
 
 
 
-
+--
 jumping = false
-touch_ground = false
+touch_ground = true
 
-JUMP_HEIGHT = 100
-
-
+gravity = 0.2
+speed = 0
 
 -- PLATFORMER EXAMPLE (RECTANGULAR COLLISION, GRAVITY, KEYBOARD MOVEMENT)
 function love.load()
 	crate = {
 		x = 50,
-		y = 311,
+		y = 300,
 		w = 100,
 		h = 100,
 		type = 'RECT',
@@ -1825,7 +1824,7 @@ function love.load()
 		y = 400,
 		w = 800,
 		h = 200,
-		type = 'GROUND',
+		type = 'RECT',
 		img = love.graphics.newImage("ground.fw.png"),
 	}
 	
@@ -1834,7 +1833,7 @@ function love.load()
 		y = 270,
 		w = 200,
 		h = 30,
-		type = 'PLATFORM',
+		type = 'RECT',
 		img = love.graphics.newImage("platform.fw.png"),
 	}
 	
@@ -1853,7 +1852,7 @@ function love.load()
 	--sound = love.audio.newSource("JKT48 - River.mp3")
 	--love.audio.play(sound)
 	
-    
+	
 end
 
 function love.draw()
@@ -1864,23 +1863,25 @@ function love.draw()
 	love.graphics.draw(crate.img, crate.x, crate.y)
 	love.graphics.draw(triangle.img, triangle.x, triangle.y)
 	love.graphics.draw(player.img, player.x, player.y)
-	if not result1 then love.graphics.print("not result1") end
-	if not result2 then love.graphics.print("not result2", 0, 50) end
-	love.graphics.print(debug_str, 0, 100)
-	--love.graphics.print(b, 0, 50)
-	
+	--if not result1 then love.graphics.print("not result1") end
+	--if not result2 then love.graphics.print("not result2", 0, 50) end
+	love.graphics.print(debug_str, 0, 0)
 end
 
+up_key_enable = true
 
 function love.update (dt)
 	p_speed = 7
-	obj_collide = {crate, platform, triangle, ground}
+	obj_collide = {ground, crate, platform}
 	
-	AddGravity(player, obj_collide)
-	IsGround(player, obj_collide)
-	IsJumping(player, obj_collide)
+	--if not IsGround (player, obj_collide) then
+		AddGravity(player, obj_collide)
+	--end
+	if jumping then
+		IsJumping(player, obj_collide, dt)
+	end
 	
-	--[[if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
+	--[=[if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
 		MoveCollide(   player,p_speed,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("right") and love.keyboard.isDown("up") then
 		MoveCollide(   player,p_speed,-p_speed,  obj_collide  )
@@ -1888,17 +1889,22 @@ function love.update (dt)
 		MoveCollide(   player,-p_speed,p_speed,  obj_collide  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("up") then
 		MoveCollide(   player,-p_speed,-p_speed,  obj_collide  )
-	elseif love.keyboard.isDown("down") then]]
+	end]=]
+	
 	if love.keyboard.isDown("down") then
 		MoveCollide(   player,0,p_speed,  obj_collide  )
-	elseif love.keyboard.isDown("up") then
+	end
+	if love.keyboard.isDown("up") then
 		--MoveCollide(   player,0,-p_speed,  obj_collide  )
-		if not jumping and touch_ground then
+		if up_key_enable then
 			AddJump(player, obj_collide)
+			up_key_enable = false
 		end
-	elseif love.keyboard.isDown("right") then
+	end
+	if love.keyboard.isDown("right") then
 		MoveCollide(   player,p_speed,0,  obj_collide  )
-	elseif love.keyboard.isDown("left") then
+	end
+	if love.keyboard.isDown("left") then
 		MoveCollide(   player,-p_speed,0,  obj_collide  )
 	end
 	
@@ -1906,15 +1912,7 @@ function love.update (dt)
 		love.event.quit()
 	end
 end
---[[
--- check whether two rectangular objects overlap
-function checkCollisionRectangle (x1,y1,w1,h1, x2,y2,w2,h2)
-	return x1 < x2+w2 and
-		x2 < x1+w1 and
-		y1 < y2+h2 and
-		y2 < y1+h1
-end
-]]
+
 -- ax, ay = circleA's center coordinates; bx, by = circleB's center coordinates; ar, br = circleA's and circleB's radii, respectively. 
 function checkCollisionCircular (ax, ay, bx, by, ar, br)
 	local dx = bx - ax
@@ -2012,31 +2010,35 @@ function CollisionRectangle (p1, p2, q1, q2)
 end
 
 
+
+
+
 -- arg: ( player_object, x_move, y_move, other_object_to_collide )
 function MoveCollide (p, xm, ym, q)
 	local result1 = true
 	local result2 = true
-	debug_str = ''
+	--debug_str = ''
 	
 	for i=1,#q do
 		--if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 		--z = CollisionRectangle ({x=p.x, y=p.y}, {x=p.w, y=p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].w, y=q[i].h})
 		--print (z)
-		if q[i].type == 'RECT' or q[i].type == 'GROUND' then
-			if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+		if q[i].type == 'RECT' or q[i].type == 'GROUND' or q[i].type == 'PLATFORM' then
+			--if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+			if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 				--print (111)
 				result1 = false
 				break
 			end
-			--if checkCollisionRectangle (p.x+xm, p.y+ym, p.w+xm, p.h+ym,    q[i].x, q[i].y, q[i].w, q[i].h) then
-			if CollisionRectangle ({x=p.x+xm, y=p.y+ym}, {x=p.x+p.w+xm, y=p.y+p.h+ym}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+			--if CollisionRectangle ({x=p.x+xm, y=p.y+ym}, {x=p.x+p.w+xm, y=p.y+p.h+ym}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+			if checkCollisionRectangle (p.x+xm, p.y+ym, p.w+xm, p.h+ym,    q[i].x, q[i].y, q[i].w, q[i].h) then
 				--print (222)
 				result2 = false
 				t = q[i]
 				break
 			end
 		elseif q[i].type == 'GROUND' then
-			--[[
+			--[=[
 			if CollisionPolygon ({x=p.x, y=p.y}, q[i].points) then
 				--print (q[i].points)
 				debug_str = 'POLY'
@@ -2044,7 +2046,7 @@ function MoveCollide (p, xm, ym, q)
 				--t = q[i]
 				break
 			end
-			]]
+			]=]
 		end
 	end
 	
@@ -2059,7 +2061,7 @@ function MoveCollide (p, xm, ym, q)
 		return false	-- not hit
 		
 	elseif result1 and not result2 then
-		--
+		--print (555)
 		if xm > 0 and ym > 0 then	-- right & down
 			if p.y+p.h <= t.y then
 				p.x = p.x + xm
@@ -2119,24 +2121,75 @@ function MoveCollide (p, xm, ym, q)
 end
 
 
-function AddGravity (mov_obj, static_obj)
-	if not jumping then
-		MoveCollide(mov_obj, 0, 5, static_obj)
+function AddGravity (p, q)
+	y_speed = 1		-- gravity/fall speed
+	
+	for i=1,#q do
+		if checkCollisionRectangle (p.x, p.y+1, p.w, p.h+1,    q[i].x, q[i].y, q[i].w, q[i].h) then
+			speed = 0
+			up_key_enable = true
+			return false
+		end
 	end
+	
+	if not jumping and not IsGround(p, q) then		
+		--debug_str = 'AddGravity = ' .. speed
+		speed = speed + y_speed		-- gravity acceleration
+		MoveCollide(p, 0, speed, q)
+		
+	end
+end
+
+
+-- only can check rectangular collider
+function checkCollisionRectangle (x1,y1,w1,h1, x2,y2,w2,h2)
+	return x1 < x2+w2 and
+		x2 < x1+w1 and
+		y1 < y2+h2 and
+		y2 < y1+h1
+end
+
+function IsGround (p, q)
+	for i=1,#q do
+		if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
+		--if checkCollisionRectangle (p.x,p.y,p.x+p.w,p.y+p.h, q[i].x, q[i].y ,q[i].x+q[i].w,q[i].y+q[i].h) then
+		--if CollisionRectangle ({x=p.x, y=p.y}, {x=p.x+p.w, y=p.y+p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].x+q[i].w, y=q[i].y+q[i].h}) then
+			debug_str = 'i: ' .. i .. '   q[i].y: ' .. q[i].y
+			--touch_ground = true
+			speed = 0
+			jumping = false
+			return true
+		end
+	end
+	--touch_ground = false
+	return false
 end
 
 function AddJump (mov_obj, static_obj)
-	jumping = true
-	jump_height = JUMP_HEIGHT
-end
-
-function IsJumping (mov_obj, static_obj)
-	if jumping and jump_height > 0 then
-		jump_height = jump_height - 10
-		MoveCollide(mov_obj, 0, -10, static_obj)
-	else
-		jumping = false
+	--if IsGround(mov_obj, static_obj) and not jumping then
+	if not jumping then
+		--print (123)
+		jumping = true
+		jump_speed = 20
 	end
 end
+
+function IsJumping (mov_obj, static_obj, dt)
+	if jumping and jump_speed > 0 then
+		jump_speed = jump_speed - 1
+		MoveCollide(mov_obj, 0, -jump_speed, static_obj)
+	else
+		--print ("isJumping: false")
+		jump_speed = 0
+		jumping = false
+	end
+	
+end
+--
+
+
+
+
+
 
 
