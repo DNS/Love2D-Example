@@ -1646,6 +1646,7 @@ end
 
 --[[
 -- MOVE COLLIDER  (RECTANGULAR COLLISION)
+debug_str = ""
 function love.load()
 	crate = {
 		x = 150,
@@ -1679,27 +1680,29 @@ function love.draw()
 	love.graphics.draw(crate.img, crate.x, crate.y)
 	love.graphics.draw(player.img, player.x, player.y)
 	
+	love.graphics.print(debug_str)
 end
 
 function love.update (dt)
 	p_speed = 10
+	debug_str = ""
 	
 	if love.keyboard.isDown("right") and love.keyboard.isDown("down") then
-		MoveCollide(   {player,p_speed,p_speed},  {crate, platform}  )
+		MoveCollideRect(   {player,p_speed,p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("right") and love.keyboard.isDown("up") then
-		MoveCollide(   {player,p_speed,-p_speed},  {crate, platform}  )
+		MoveCollideRect(   {player,p_speed,-p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("down") then
-		MoveCollide(   {player,-p_speed,p_speed},  {crate, platform}  )
+		MoveCollideRect(   {player,-p_speed,p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("left") and love.keyboard.isDown("up") then
-		MoveCollide(   {player,-p_speed,-p_speed},  {crate, platform}  )
+		MoveCollideRect(   {player,-p_speed,-p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("down") then
-		MoveCollide(   {player,0,p_speed},  {crate, platform}  )
+		MoveCollideRect(   {player,0,p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("up") then
-		MoveCollide(   {player,0,-p_speed},  {crate, platform}  )
+		MoveCollideRect(   {player,0,-p_speed},  {crate, platform}  )
 	elseif love.keyboard.isDown("right") then
-		MoveCollide(   {player,p_speed,0},  {crate, platform}  )
+		MoveCollideRect(   {player,p_speed,0},  {crate, platform}  )
 	elseif love.keyboard.isDown("left") then
-		MoveCollide(   {player,-p_speed,0},  {crate, platform}  )
+		MoveCollideRect(   {player,-p_speed,0},  {crate, platform}  )
 	end
 	
 	
@@ -1719,7 +1722,7 @@ end
 
 
 -- arg: p={player, x_player_speed, y_player_speed},  q={objects_to_collide, ...} 
-function MoveCollide (p, q)
+function MoveCollideRect (p, q)
 	result1 = true
 	result2 = true
 	
@@ -1783,29 +1786,31 @@ function MoveCollide (p, q)
 		elseif p[2] > 0 then		-- right
 			p[1].x = t.x - p[1].w
 		end
-		
+		debug_str = "HIT"
 		return true	-- collide with other object
 	end
 	
 	
 end
+
 ]]
 
 
+--[[
 
---
+-- PLATFORMER EXAMPLE (RECTANGULAR COLLISION, GRAVITY, KEYBOARD MOVEMENT)
 jumping = false
 up_key_enable = false
 plat_move_right = true
+on_ladder = false
 
-p_speed = 7
+p_speed = 200
 g_speed = 0
 g_accel = 1		-- gravity/fall speed
 
--- PLATFORMER EXAMPLE (RECTANGULAR COLLISION, GRAVITY, KEYBOARD MOVEMENT)
-function love.load()
+function love.load ()
 	crate = {
-		x = 50,
+		x = 350,
 		y = 300,
 		w = 100,
 		h = 100,
@@ -1833,7 +1838,7 @@ function love.load()
 		img = love.graphics.newImage("ground.fw.png"),
 	}
 	
-	platform = {
+	moving_platform = {
 		x = 500,
 		y = 270,
 		w = 200,
@@ -1841,6 +1846,36 @@ function love.load()
 		type = 'PLATFORM',
 		movable = 50,
 		img = love.graphics.newImage("platform.fw.png"),
+	}
+	
+	platform1 = {
+		x = 194,
+		y = 150,
+		w = 200,
+		h = 30,
+		type = 'STATIC',
+		movable = 0,
+		img = love.graphics.newImage("platform.fw.png"),
+	}
+	
+	platform2 = {
+		x = -50,
+		y = 150,
+		w = 200,
+		h = 30,
+		type = 'STATIC',
+		movable = 0,
+		img = love.graphics.newImage("platform.fw.png"),
+	}
+	
+	ladder = {
+		x = 150,
+		y = 150,
+		w = 44,
+		h = 250,
+		type = 'LADDER',
+		movable = 50,
+		img = love.graphics.newImage("ladder.fw.png"),
 	}
 	
 	triangle = {
@@ -1862,13 +1897,16 @@ function love.load()
 	
 end
 
-function love.draw()
+function love.draw ()
 	love.graphics.draw(sky, 0, 0)
 	love.graphics.draw(ground.img, ground.x, ground.y)
 	
-	love.graphics.draw(platform.img, platform.x, platform.y)
+	love.graphics.draw(moving_platform.img, moving_platform.x, moving_platform.y)
+	love.graphics.draw(ladder.img, ladder.x, ladder.y)
 	love.graphics.draw(crate.img, crate.x, crate.y)
 	love.graphics.draw(triangle.img, triangle.x, triangle.y)
+	love.graphics.draw(platform1.img, platform1.x, platform1.y)
+	love.graphics.draw(platform2.img, platform2.x, platform2.y)
 	love.graphics.draw(player.img, player.x, player.y)
 	--if not result1 then love.graphics.print("not result1") end
 	--if not result2 then love.graphics.print("not result2", 0, 50) end
@@ -1876,52 +1914,40 @@ function love.draw()
 end
 
 
-
 function love.update (dt)
-	obj_collide = {ground, crate, platform}
+	obj_collide = {ground, crate, moving_platform, platform1, platform2, ladder}
 	--platforms = {platform}
-	local platform_speed = 10
-	local on_platform = false
+	local platform_speed = 150
 	
-	if platform.x >= 600 then
-		plat_move_right = false	-- move left
-	elseif platform.x <= 0 then
-		plat_move_right = true	-- move right
-	end
-	if plat_move_right then
-		on_platform = PlatformHolder (player, platform, plat_move_right, platform_speed)
-		platform.x = platform.x + platform_speed
-		if checkCollisionRectangle (player.x, player.y, player.w, player.h,    platform.x, platform.y, platform.w, platform.h) then
-			player.x = platform.x + platform.w
+	--PlatformMoveHorizontal (player, moving_platform, platform_speed, dt)
+	PlatformMoveVertical (player, moving_platform, platform_speed, dt)
+	
+	
+	if not LadderCollide(player, ladder) then
+		AddGravity(player, obj_collide)
+		IsJumping(player, obj_collide, dt)
+		
+		--if love.keyboard.isDown("down") then
+		--	MoveCollideRect(   player,0,p_speed,  obj_collide  )
+		--end
+		if love.keyboard.isDown("space") then
+			if up_key_enable then
+				AddJump(player, obj_collide)
+				up_key_enable = false
+			end
 		end
-	elseif not plat_move_right then
-		on_platform = PlatformHolder (player, platform, plat_move_right, platform_speed)
-		platform.x = platform.x - platform_speed
-		if checkCollisionRectangle (player.x, player.y, player.w, player.h,    platform.x, platform.y, platform.w, platform.h) then
-			player.x = platform.x - player.w
-		end
-	end
-	
-	AddGravity(player, obj_collide)
-	IsJumping(player, obj_collide, dt)
-	
-	if love.keyboard.isDown("down") then
-		MoveCollide(   player,0,p_speed,  obj_collide  )
-	end
-	if love.keyboard.isDown("up") then
-		--MoveCollide(   player,0,-p_speed,  obj_collide  )
-		if up_key_enable then
-			AddJump(player, obj_collide)
-			up_key_enable = false
+		if not on_platform then
+			if love.keyboard.isDown("right") then
+				MoveCollideRect(   player,p_speed*dt,0,  obj_collide  )
+			end
+			if love.keyboard.isDown("left") then
+				MoveCollideRect(   player,-p_speed*dt,0,  obj_collide  )
+			end
 		end
 	end
 	
-	if love.keyboard.isDown("right") and not on_platform then
-		MoveCollide(   player,p_speed,0,  obj_collide  )
-	end
-	if love.keyboard.isDown("left") and not on_platform then
-		MoveCollide(   player,-p_speed,0,  obj_collide  )
-	end
+	
+	
 	
 	if love.keyboard.isDown("escape") then
 		love.event.quit()
@@ -1974,7 +2000,7 @@ function CollisionPolygon (p, q)
 			end
 			
 		else
-			print (333)
+			--print (333)
 			--print (p.x, p.y, '|', q[a].x, q[a].y)
 			-- y = (x-x1)/(x2-x1) * (y2-y1) + y1
 			y_cmp1 = (q[c].x-q[a].x)/(q[b].x-q[a].x) * (q[b].y-q[a].y) + q[a].y
@@ -2029,14 +2055,16 @@ end
 
 
 -- arg: ( player_object, x_move, y_move, other_object_to_collide )
-function MoveCollide (p, xm, ym, q)
+function MoveCollideRect (p, xm, ym, q)
 	local result1 = true
 	local result2 = true
 	local result3 = false
+	local result4 = false
 	local t
 	--debug_str = ''
 	
 	for i=1,#q do
+		--print (q[i].type)
 		t = q[i]		-- t: temporary variable
 		--if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 		--z = CollisionRectangle ({x=p.x, y=p.y}, {x=p.w, y=p.h}, {x=q[i].x, y=q[i].y}, {x=q[i].w, y=q[i].h})
@@ -2053,8 +2081,11 @@ function MoveCollide (p, xm, ym, q)
 				result2 = false
 				break
 			end
-		--elseif q[i].type == 'PLATFORM' then
-			
+		elseif q[i].type == 'LADDER' then
+			if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) and not checkCollisionRectangle (p.x+xm, p.y+ym, p.w+xm, p.h+ym,    q[i].x, q[i].y, q[i].w, q[i].h) then
+				debug_str = 'ladder'
+				break
+			end
 		end
 	end
 	
@@ -2063,7 +2094,6 @@ function MoveCollide (p, xm, ym, q)
 		--debug_str = '0000'
 		p.x = p.x + xm
 		p.y = p.y + ym
-		
 		return false
 	elseif result1 and not result2 then		-- collide with other object
 		if t.movable == 0 then		-- rigid object
@@ -2079,7 +2109,6 @@ function MoveCollide (p, xm, ym, q)
 				p.x = t.x - p.w
 			end
 		elseif p.movable > t.movable then		-- light object
-		--else
 			--debug_str = '222'
 			if ym > 0 then			--  down
 				p.y = t.y - p.h
@@ -2100,12 +2129,16 @@ function MoveCollide (p, xm, ym, q)
 			elseif ym < 0 then		-- up
 				p.y = t.y + t.h
 			end
-			
 			if xm < 0 then			-- left
 				p.x = t.x + t.w
 			elseif xm > 0 then		-- right
 				p.x = t.x - p.w
 			end
+			
+			--if jumping then
+			--	jump_speed = 0
+			--	jumping = false
+			--end
 		end
 		
 		
@@ -2130,10 +2163,8 @@ function AddGravity (p, q)
 	end
 	
 	if not jumping and not IsGround(p, q) then
-		--debug_str = 'AddGravity = ' .. g_speed
 		g_speed = g_speed + g_accel		-- gravity acceleration
-		MoveCollide(p, 0, g_speed, q)
-		
+		MoveCollideRect(p, 0, g_speed, q)
 	end
 end
 
@@ -2141,7 +2172,7 @@ end
 
 
 
-function PlatformHolder (p, plat, plat_move_right, plat_speed)
+function PlatformCollide (p, plat, plat_move_right, plat_speed, dt)
 	if p.x+p.w >= plat.x and p.x <= plat.x+plat.w and plat.y == p.y+p.h then
 		--debug_str = 'inside'
 		local delta = 0
@@ -2149,21 +2180,21 @@ function PlatformHolder (p, plat, plat_move_right, plat_speed)
 		delta = p.x - plat.x
 		if plat_move_right then
 			--debug_str = 'right'
-			p.x = plat.x + delta + plat_speed
+			p.x = plat.x + delta + plat_speed * dt
 			if love.keyboard.isDown("right") then
-				p.x = p.x + p_speed
+				p.x = p.x + p_speed * dt
 			end
 			if love.keyboard.isDown("left") then
-				p.x =  p.x - p_speed
+				p.x =  p.x - p_speed * dt
 			end
 		elseif not plat_move_right then
 			--debug_str = 'left' .. ' , ' .. delta
-			p.x = plat.x + delta - plat_speed
+			p.x = plat.x + delta - plat_speed * dt
 			if love.keyboard.isDown("right") then
-				p.x = p.x + p_speed
+				p.x = p.x + p_speed * dt
 			end
 			if love.keyboard.isDown("left") then
-				p.x = p.x - p_speed
+				p.x = p.x - p_speed * dt
 			end
 		end
 		
@@ -2172,6 +2203,113 @@ function PlatformHolder (p, plat, plat_move_right, plat_speed)
 	--if checkCollisionRectangle (p.x, p.y, p.w, p.h,    q[i].x, q[i].y, q[i].w, q[i].h) then
 	end
 
+	return false
+end
+
+
+function PlatformMoveHorizontal (player, moving_platform, platform_speed, dt)
+	local on_platform = false
+	if moving_platform.x >= 600 then
+		plat_move_right = false	-- move left
+	elseif moving_platform.x <= 200 then
+		plat_move_right = true	-- move right
+	end
+	if plat_move_right then
+		on_platform = PlatformCollide (player, moving_platform, plat_move_right, platform_speed, dt)
+		moving_platform.x = moving_platform.x + platform_speed*dt
+		if checkCollisionRectangle (player.x, player.y, player.w, player.h,    moving_platform.x, moving_platform.y, moving_platform.w, moving_platform.h) then
+			player.x = moving_platform.x + moving_platform.w
+		end
+	elseif not plat_move_right then
+		on_platform = PlatformCollide (player, moving_platform, plat_move_right, platform_speed, dt)
+		moving_platform.x = moving_platform.x - platform_speed*dt
+		if checkCollisionRectangle (player.x, player.y, player.w, player.h,    moving_platform.x, moving_platform.y, moving_platform.w, moving_platform.h) then
+			player.x = moving_platform.x - player.w
+		end
+	end
+end
+
+
+function PlatformMoveVertical (player, moving_platform, platform_speed, dt)
+	local on_platform = false
+	if moving_platform.y >= 400 then
+		plat_move_right = false	-- move left
+	elseif moving_platform.y <= 200 then
+		plat_move_right = true	-- move right
+	end
+	if plat_move_right then
+		on_platform = PlatformCollide (player, moving_platform, plat_move_right, platform_speed, dt)
+		--moving_platform.y = moving_platform.y + platform_speed*dt
+		
+		if on_platform then
+			--player.x = moving_platform.x + moving_platform.w / 2
+			player.y = moving_platform.y - player.h
+		end
+		if checkCollisionRectangle (player.x, player.y, player.w, player.h,    moving_platform.x, moving_platform.y, moving_platform.w, moving_platform.h) then
+			
+		end
+	elseif not plat_move_right then
+		on_platform = PlatformCollide (player, moving_platform, plat_move_right, platform_speed, dt)
+		--moving_platform.y = moving_platform.y - platform_speed*dt
+		
+		if on_platform then
+			--player.x = moving_platform.x + moving_platform.w / 2
+			player.y = moving_platform.y - player.h
+		end
+		if checkCollisionRectangle (player.x, player.y, player.w, player.h,    moving_platform.x, moving_platform.y, moving_platform.w, moving_platform.h) then
+			
+		end
+	end
+end
+
+function LadderCollide (p, l)
+	--debug_str = l.y+l.h .. " , " .. math.floor(p.y+p.h)
+	if p.x+p.w >= l.x and p.x <= l.x+l.w and l.y == p.y+p.h then	-- check if upstairs
+		--debug_str = "upstairs"
+		if love.keyboard.isDown("right") then
+			p.x = p.x + p_speed
+			--MoveCollideRect(   p,p_speed,0,  {ladder } )
+		end
+		if love.keyboard.isDown("left") then
+			p.x = p.x - p_speed
+			--MoveCollideRect(   p,-p_speed,0,  {ladder } )
+		end
+		if love.keyboard.isDown("down") then
+			p.x = l.x + l.w/4	-- make the player on the middle of stair
+			p.y = l.y - p.h/4	-- make the player a little bit down
+		end
+		if love.keyboard.isDown("up") then
+			return false
+		end
+		return true
+	elseif p.x+p.w >= l.x and p.x <= l.x+l.w and l.y+l.h <= p.y+p.h then	-- check if downstairs
+		--debug_str = "downstairs"
+		if love.keyboard.isDown("up") then
+			p.y = l.y+l.h - p.h
+			p.x = l.x + l.w/4
+		end
+		return false
+	elseif checkCollisionRectangle (p.x, p.y, p.w, p.h,    l.x, l.y, l.w, l.h) then		-- (smaller hit detection area on the middle of ladder)
+		--debug_str = "hit"
+		if love.keyboard.isDown("down") then
+			p.y = p.y + 3
+			if l.y+l.h <= p.y+p.h then
+				p.y = l.y+l.h - p.h
+				--debug_str = "22"
+			end
+		end
+		if love.keyboard.isDown("up") then
+			p.y = p.y - 3
+			if l.y >= p.y+p.h then
+				p.y = l.y - p.h
+			end
+			
+		end
+		
+		return true
+	end
+	
+	
 	return false
 end
 
@@ -2200,9 +2338,7 @@ function IsGround (p, q)
 end
 
 function AddJump (p, q)
-	--if IsGround(p, q) and not jumping then
 	if not jumping then
-		--print (123)
 		jumping = true
 		jump_speed = 20
 	end
@@ -2220,17 +2356,110 @@ function IsJumping (p, q, dt)
 		end
 		
 		jump_speed = jump_speed - 1
-		MoveCollide(p, 0, -jump_speed, q)
+		MoveCollideRect(p, 0, -jump_speed, q)
 	else
-		--print ("isJumping: false")
 		jump_speed = 0
 		jumping = false
 	end
 	
 end
+--]]
+
+
 --
+-- ANIMATION
+speed = 200
+x = 300
+y = 300
+
+walk_animate = false
+
+function love.load()
+	love.graphics.setBackgroundColor(200, 100, 255)
+	--[[
+	data = {
+		love.graphics.newImage("player.fw.png"),
+		love.graphics.newImage("player walk.fw.png"),
+		}
+	
+	player_idle = NewAnimation (1, {love.graphics.newImage("player.fw.png")}, 1)
+	player_walk = NewAnimation (2, data, 8)
+	]]
+	player_idle = NewAnimation (1, {love.graphics.newImage("player.fw.png")}, 1)
+	player_walk = NewAnimationQuad (2, "player walk.fw_2x1.png", 21, 73, 8)
+end
+
+function love.draw()
+	if not walk_animate then
+		PlayAnimation(player_idle, x, y)	-- idle animation
+	else 
+		PlayAnimation(player_walk, x, y)	-- walk animation
+	end
+end
+
+function love.update (dt)
+	if love.keyboard.isDown("right") then
+		x = x + speed*dt
+		walk_animate = true
+	end
+	if love.keyboard.isDown("left") then
+		x = x - speed*dt
+		walk_animate = true
+	end
+	
+	--if not love.keyboard.isDown("left", "right") and not love.keyboard.isDown("right") then
+	if not love.keyboard.isDown("left", "right") then
+		walk_animate = false
+	end
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+
+function NewAnimation (num_frames, img_data, delay)
+	return {
+		num_frames = num_frames,
+		w = img_data[1]:getWidth(),
+		h = img_data[1]:getHeight(),
+		imgs = img_data,
+		counter = 1,
+		delay = delay,
+		delay_tmp = 1,
+		}
+end
 
 
+function NewAnimationQuad (num_frames, img_file, width, height, delay)
+	obj = {}
+	x = 1
+	imgs = love.graphics.newImage(img_file)
+	love.graphics.newQuad(x, 1, width, height, imgs:getWidth(), imgs:getHeight() )
+	
+	obj.num_frames = num_frames
+	obj.w = imgs[1]:getWidth()
+	obj.h = imgs[1]:getHeight()
+	obj.imgs = imgs
+	obj.counter = 1
+	obj.delay = delay
+	obj.delay_tmp = 1
+	return obj
+end
+
+function PlayAnimation (anim, x, y)
+	if anim.counter <= anim.num_frames then
+		love.graphics.draw(anim.imgs[anim.counter], x, y)
+		if anim.delay_tmp <= anim.delay then
+			anim.delay_tmp = anim.delay_tmp + 1
+		else
+			anim.delay_tmp = 1
+			anim.counter = anim.counter + 1
+		end
+	else
+		anim.counter = 1
+		love.graphics.draw(anim.imgs[anim.counter], x, y)
+	end
+	
+end
 
 
 

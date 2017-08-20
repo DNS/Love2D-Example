@@ -23,6 +23,8 @@ not
 math.abs(-15)	-- return 15 (absolute number)
 math.pi			-- return PI constant number = 3.1415926535898
 math.exp(1)		-- return e^1 = 2.718281828459
+math.floor(4.66)	-- returns 4.66 rounded down to 4
+math.ceil(4.66)	-- returns 4.66 rounded up to 5
 
 radians = degrees * math.pi / 180	-- To convert degrees to radians
 
