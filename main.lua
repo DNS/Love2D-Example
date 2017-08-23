@@ -2368,48 +2368,66 @@ end
 
 --
 -- ANIMATION
-speed = 200
+speed = 4
 x = 300
 y = 300
+
+-- idle=0, left=1, right=2
+action = 0 
 
 walk_animate = false
 
 function love.load()
 	love.graphics.setBackgroundColor(200, 100, 255)
-	--[[
+	
 	data = {
 		love.graphics.newImage("player.fw.png"),
 		love.graphics.newImage("player walk.fw.png"),
 		}
+	player1_idle = NewAnimation (1, {love.graphics.newImage("player.fw.png")}, 1)
+	player1_walk = NewAnimation (2, data, 8)
 	
-	player_idle = NewAnimation (1, {love.graphics.newImage("player.fw.png")}, 1)
-	player_walk = NewAnimation (2, data, 8)
-	]]
-	player_idle = NewAnimation (1, {love.graphics.newImage("player.fw.png")}, 1)
-	player_walk = NewAnimationQuad (2, "player walk.fw_2x1.png", 21, 73, 8)
+	
+	player2_idle = NewAnimationQuad (3, "player idle.png", 10)
+	player2_walk_left = NewAnimationQuad (8, "player walk left.png", 2)
+	player2_walk_right = NewAnimationQuad (8, "player walk right.png", 2)
 end
 
 function love.draw()
+
 	if not walk_animate then
-		PlayAnimation(player_idle, x, y)	-- idle animation
+		PlayAnimation(player1_idle, x, y-100)	-- idle animation
 	else 
-		PlayAnimation(player_walk, x, y)	-- walk animation
+		PlayAnimation(player1_walk, x, y-100)	-- walk animation
 	end
+	
+	
+	if action == 0 then
+		PlayAnimationQuad(player2_idle, x, y)	-- idle animation
+	elseif action == 1 then
+		PlayAnimationQuad(player2_walk_left, x, y)	-- walk animation
+	elseif action == 2 then
+		PlayAnimationQuad(player2_walk_right, x, y)	-- walk animation
+	end
+	
 end
 
 function love.update (dt)
 	if love.keyboard.isDown("right") then
-		x = x + speed*dt
+		x = x + speed
 		walk_animate = true
+		action = 2	-- right
 	end
 	if love.keyboard.isDown("left") then
-		x = x - speed*dt
+		x = x - speed
 		walk_animate = true
+		action = 1	-- left
 	end
 	
 	--if not love.keyboard.isDown("left", "right") and not love.keyboard.isDown("right") then
 	if not love.keyboard.isDown("left", "right") then
 		walk_animate = false
+		action = 0	-- idle
 	end
 	if love.keyboard.isDown("escape") then
 		love.event.quit()
@@ -2428,23 +2446,6 @@ function NewAnimation (num_frames, img_data, delay)
 		}
 end
 
-
-function NewAnimationQuad (num_frames, img_file, width, height, delay)
-	obj = {}
-	x = 1
-	imgs = love.graphics.newImage(img_file)
-	love.graphics.newQuad(x, 1, width, height, imgs:getWidth(), imgs:getHeight() )
-	
-	obj.num_frames = num_frames
-	obj.w = imgs[1]:getWidth()
-	obj.h = imgs[1]:getHeight()
-	obj.imgs = imgs
-	obj.counter = 1
-	obj.delay = delay
-	obj.delay_tmp = 1
-	return obj
-end
-
 function PlayAnimation (anim, x, y)
 	if anim.counter <= anim.num_frames then
 		love.graphics.draw(anim.imgs[anim.counter], x, y)
@@ -2458,10 +2459,45 @@ function PlayAnimation (anim, x, y)
 		anim.counter = 1
 		love.graphics.draw(anim.imgs[anim.counter], x, y)
 	end
-	
 end
 
 
+function NewAnimationQuad (num_frames, img_file, delay)
+	obj = {}
+	obj.quad = {}
+	obj.img = love.graphics.newImage(img_file)
+	
+	frame_width = obj.img:getWidth()/num_frames
+	frame_height = obj.img:getHeight()
+	
+	for i=1,8 do
+		obj.quad[i] = love.graphics.newQuad( (i-1)*frame_width, 0, frame_width, frame_height, obj.img:getDimensions() )
+	end
+	
+	obj.num_frames = num_frames
+	obj.w = frame_width
+	obj.h = frame_height
+	
+	obj.counter = 1
+	obj.delay = delay
+	obj.delay_tmp = 1
+	return obj
+end
+
+function PlayAnimationQuad (anim, x, y)
+	if anim.counter <= anim.num_frames then
+		love.graphics.draw(anim.img, anim.quad[anim.counter], x, y)
+		if anim.delay_tmp <= anim.delay then
+			anim.delay_tmp = anim.delay_tmp + 1
+		else
+			anim.delay_tmp = 1
+			anim.counter = anim.counter + 1
+		end
+	else
+		anim.counter = 1
+		love.graphics.draw(anim.img, anim.quad[anim.counter], x, y)
+	end
+end
 
 
 
