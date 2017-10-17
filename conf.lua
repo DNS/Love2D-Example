@@ -1,3 +1,11 @@
+
+--[[
+Can be overriden using:
+love.graphics.setMode()
+love.graphics.setDefaultFilter("nearest", "nearest", 16)
+love.graphics.setLineStyle("smooth")
+]]
+
 function love.conf (t)
     t.identity = nil                    -- The name of the save directory (string)
     t.version = "0.10.2"                -- The LÖVE version this game was made for (string)
@@ -17,7 +25,7 @@ function love.conf (t)
     t.window.fullscreen = false         -- Enable fullscreen (boolean)
     t.window.fullscreentype = "desktop" -- Choose between "desktop" fullscreen or "exclusive" fullscreen mode (string)
     t.window.vsync = true               -- Enable vertical sync (boolean)
-    t.window.msaa = 0                   -- The number of samples to use with multi-sampled antialiasing (number)
+    t.window.msaa = 8                   -- The number of samples to use with multi-sampled antialiasing (number)
     t.window.display = 1                -- Index of the monitor to show the window in (number)
     t.window.highdpi = false            -- Enable high-dpi mode for the window on a Retina display (boolean)
     t.window.x = nil                    -- The x-coordinate of the window's position in the specified display (number)

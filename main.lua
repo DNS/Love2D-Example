@@ -1,10 +1,11 @@
 
 --[[
+-- PLAY AUDIO .MP3
 function love.load()
 	splash = love.graphics.newImage("futuretech_logo.jpg")
 
-	--sound = love.audio.newSource("JKT48 - River.mp3")
-	--love.audio.play(sound)
+	sound = love.audio.newSource("JKT48 - River.mp3")
+	love.audio.play(sound)
 end
 
 x, y = 20, 20
@@ -39,7 +40,6 @@ function love.update (dt)
 		y = y - speed*dt
 	end
 end
-
 
 --require "love-splash/main"
 ]]
@@ -303,9 +303,10 @@ end
 
 
 
---[[
+--
 -- PHYSICS BOX2D
 function love.load ()
+    
 	love.physics.setMeter(64) --the height of a meter our worlds will be 64px
 	world = love.physics.newWorld(0, 9.81*64, true) --create a world for the bodies to exist in with horizontal gravity of 0 and vertical gravity of 9.81
 	
@@ -369,7 +370,7 @@ function love.draw ()
 	love.graphics.polygon("fill", objects.block1.body:getWorldPoints(objects.block1.shape:getPoints()))
 	love.graphics.polygon("fill", objects.block2.body:getWorldPoints(objects.block2.shape:getPoints()))
 end
---]]
+--
 
 
 --[[
@@ -1064,6 +1065,7 @@ BMP16 = A1:R5:G5:B5 (1-bit alpha, ugly alpha blend support, only for sharp edge 
 BMP16 = A4:R4:G4:B4 (4-bit alpha, good/medium alpha blend)
 BMP32 = A8:R8:G8:B8 (8-bit alpha, best alpha blend)
 
+Supported image file format: BMP, TGA, PNG, JPEG
 
 ]=]
 
@@ -1075,9 +1077,9 @@ function love.load ()
 	img_bmp_pa = love.graphics.newImage("su-avatar-premultiplied-alpha.bmp")	-- need to use love.graphics.setBlendMode("alpha", "premultiplied")
 	img_tga = love.graphics.newImage("su-avatar.tga")	-- TGA also support premultiplied alpha
 	img_jpg = love.graphics.newImage("su-avatar.jpg")	-- JPEG doesn't support alpha transparency
-	--img_gif = love.graphics.newImage("su-avatar.gif")	-- GIF, TIFF not supported by Love2D 0.10.1
+	--img_gif = love.graphics.newImage("su-avatar.gif")	-- GIF, TIFF not supported by Love2D > 0.10.x
 	
-	love.graphics.setBackgroundColor(127, 127, 127)		-- gray background color
+	love.graphics.setBackgroundColor(255, 0, 127)		-- background color
 end
 
 function love.draw ()
@@ -2366,7 +2368,7 @@ end
 --]]
 
 
---
+--[[
 -- ANIMATION
 speed = 4
 x = 300
@@ -2380,27 +2382,20 @@ walk_animate = false
 function love.load()
 	love.graphics.setBackgroundColor(200, 100, 255)
 	
-	data = {
-		love.graphics.newImage("player.fw.png"),
-		love.graphics.newImage("player walk.fw.png"),
-		}
-	player1_idle = NewAnimation (1, {love.graphics.newImage("player.fw.png")}, 1)
-	player1_walk = NewAnimation (2, data, 8)
+	player1_idle = NewAnimation ({"player.fw.png"}, 1)
+	player1_walk = NewAnimation ({"player.fw.png", "player walk.fw.png"}, 4)
 	
-	
-	player2_idle = NewAnimationQuad (3, "player idle.png", 10)
-	player2_walk_left = NewAnimationQuad (8, "player walk left.png", 2)
-	player2_walk_right = NewAnimationQuad (8, "player walk right.png", 2)
+	player2_idle = NewAnimationQuad ("player idle.png", 10, 3)
+	player2_walk_left = NewAnimationQuad ("player walk left.png", 2, 8)
+	player2_walk_right = NewAnimationQuad ("player walk right.png", 2, 8)
 end
 
 function love.draw()
-
 	if not walk_animate then
 		PlayAnimation(player1_idle, x, y-100)	-- idle animation
 	else 
 		PlayAnimation(player1_walk, x, y-100)	-- walk animation
 	end
-	
 	
 	if action == 0 then
 		PlayAnimationQuad(player2_idle, x, y)	-- idle animation
@@ -2409,7 +2404,6 @@ function love.draw()
 	elseif action == 2 then
 		PlayAnimationQuad(player2_walk_right, x, y)	-- walk animation
 	end
-	
 end
 
 function love.update (dt)
@@ -2434,35 +2428,46 @@ function love.update (dt)
 	end
 end
 
-function NewAnimation (num_frames, img_data, delay)
+function NewAnimation (img_files, delay)
+	img_data = {}
+	
+	for i=1,#img_files do
+		img_data[i] = love.graphics.newImage(img_files[i])
+	end
+	
 	return {
-		num_frames = num_frames,
+		num_frames = #img_files,
 		w = img_data[1]:getWidth(),
 		h = img_data[1]:getHeight(),
 		imgs = img_data,
-		counter = 1,
+		frame_counter = 1,
 		delay = delay,
-		delay_tmp = 1,
+		delay_counter = 1,
 		}
 end
 
 function PlayAnimation (anim, x, y)
-	if anim.counter <= anim.num_frames then
-		love.graphics.draw(anim.imgs[anim.counter], x, y)
-		if anim.delay_tmp <= anim.delay then
-			anim.delay_tmp = anim.delay_tmp + 1
+	if anim.frame_counter <= anim.num_frames then
+		love.graphics.draw(anim.imgs[anim.frame_counter], x, y)
+		if anim.delay_counter <= anim.delay then
+			anim.delay_counter = anim.delay_counter + 1
 		else
-			anim.delay_tmp = 1
-			anim.counter = anim.counter + 1
+			anim.delay_counter = 1
+			anim.frame_counter = anim.frame_counter + 1
 		end
 	else
-		anim.counter = 1
-		love.graphics.draw(anim.imgs[anim.counter], x, y)
+		anim.frame_counter = 1
+		love.graphics.draw(anim.imgs[anim.frame_counter], x, y)
 	end
 end
 
+function ResetAnimation (anim, x, y)
+	anim.delay_counter = 1
+	anim.frame_counter = 1
+end
 
-function NewAnimationQuad (num_frames, img_file, delay)
+
+function NewAnimationQuad (img_file, delay, num_frames)
 	obj = {}
 	obj.quad = {}
 	obj.img = love.graphics.newImage(img_file)
@@ -2470,7 +2475,7 @@ function NewAnimationQuad (num_frames, img_file, delay)
 	frame_width = obj.img:getWidth()/num_frames
 	frame_height = obj.img:getHeight()
 	
-	for i=1,8 do
+	for i=1,num_frames do
 		obj.quad[i] = love.graphics.newQuad( (i-1)*frame_width, 0, frame_width, frame_height, obj.img:getDimensions() )
 	end
 	
@@ -2478,26 +2483,92 @@ function NewAnimationQuad (num_frames, img_file, delay)
 	obj.w = frame_width
 	obj.h = frame_height
 	
-	obj.counter = 1
+	obj.frame_counter = 1
 	obj.delay = delay
-	obj.delay_tmp = 1
+	obj.delay_counter = 1
 	return obj
 end
 
 function PlayAnimationQuad (anim, x, y)
-	if anim.counter <= anim.num_frames then
-		love.graphics.draw(anim.img, anim.quad[anim.counter], x, y)
-		if anim.delay_tmp <= anim.delay then
-			anim.delay_tmp = anim.delay_tmp + 1
+	if anim.frame_counter <= anim.num_frames then
+		love.graphics.draw(anim.img, anim.quad[anim.frame_counter], x, y)
+		if anim.delay_counter <= anim.delay then
+			anim.delay_counter = anim.delay_counter + 1
 		else
-			anim.delay_tmp = 1
-			anim.counter = anim.counter + 1
+			anim.delay_counter = 1
+			anim.frame_counter = anim.frame_counter + 1
 		end
 	else
-		anim.counter = 1
-		love.graphics.draw(anim.img, anim.quad[anim.counter], x, y)
+		anim.frame_counter = 1
+		love.graphics.draw(anim.img, anim.quad[anim.frame_counter], x, y)
 	end
 end
 
+function ResetAnimationQuad (anim, x, y)
+	anim.frame_counter = 1
+	anim.delay_counter = 1
+end
+
+]]
+
+--[[
+-- POLYGON
+
+function love.load ()
+	
+end
+
+function love.draw ()
+	love.graphics.setColor(0, 255, 0)
+	love.graphics.rectangle("fill", 10, 10, 100, 20)
+	
+	love.graphics.setColor(255, 0, 0)
+	love.graphics.polygon("fill", {20, 20, 10, 100, 300, 300})
+end
+
+function love.update (dt)
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+]]
+
+--[[
+-- ROTATING WHEEL
+r = 0
+
+function love.load ()
+	nippon_flag = love.graphics.newImage("nippon flag.png")
+	
+end
+
+function love.draw ()
+	--love.graphics.draw(nippon_flag, 300, 300, math.pi*r, 1, 1, 1000, 1000)
+	love.graphics.draw(nippon_flag, 300, 300, math.pi*r, 1, 1, 250, 250)
+end
+
+function love.update (dt)
+	r = r + 0.026
+	if r >= 2 then r = 0 end
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+]]
+
+--[[
+-- VIBRATION (Android/iOS devices only)
+function love.load ()
+	love.system.vibrate( 1.5 )
+end
+
+function love.draw ()
+	
+end
+
+function love.update (dt)
+	
+end
+]]
 
 
