@@ -1,10 +1,13 @@
 
+function test ()
+
+	for x=1, 8 do
+	
+	end
+end
 
 
+test()
 
-
-io.write(123)
-
-
-
+print(x)
 

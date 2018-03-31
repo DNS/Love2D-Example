@@ -82,12 +82,26 @@ end
 a = {"aaa", "bbb", "ccc"}	-- array
 print(a[1])	-- array index start from 1
 
+
+-- Multi-dimensional array
+-- Create a 3 x 5 array
+grid = {}
+for i = 1, 3 do
+    grid[i] = {}
+
+    for j = 1, 5 do
+        grid[i][j] = 0 -- Fill the values here
+    end
+end
+
+
+
 var_array = {}	-- declare var as array/table
 table.insert(var_array, 111)
 table.insert(var_array, 222)
 table.insert(var_array, 333)
 
-table.remove(var_array, 2)
+table.remove(var_array, 2)	-- table.remove(var_array, index_to_remove)
 
 print(var_array[1])
 print(var_array[2])
@@ -115,6 +129,12 @@ end
 
 names = {'John', 'Joe', 'Steve'}
 for i=1, 3 do print( names[i] ) end
+
+
+-- loop & break
+for i=1, #n do
+	break
+end
 
 -- iterate array
 names = {'John', 'Joe', 'Steve'}
@@ -202,6 +222,10 @@ This is block comment
 
 --]===]
 
+-- Anonymous function
+test = function () print("anonymous function") end
+test()
+
 -- Callback function
 function test ()
 	print 'ok'
@@ -237,6 +261,20 @@ math.randomseed(os.time())
 value = math.random(1, 100)		-- return random number between 1-100
 print(value)
 
+--------------------------------------------
+-- Gargabe collection / Free memory
+var1 = "test 123"
+var1 = nil			-- var1 unreferenced
+collectgarbage()	-- run garbage collector
 
+--------------------------------------------
+-- system() C equivalent
+os.execute("ver")
 
+--------------------------------------------
+-- popen() & ShellExecute() C/WinAPI equivalent, and dump to string
+handle = io.popen("ver")
+result = handle:read("*a")
+handle:close()
+print (result)
 

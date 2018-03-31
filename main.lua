@@ -46,6 +46,16 @@ end
 
 
 --[[
+-- RESIZE WINDOW
+
+function love.resize ()
+
+end
+
+
+]]
+
+--[[
 player = {
 x = 150,
 y = 150,
@@ -303,7 +313,7 @@ end
 
 
 
---
+--[[
 -- PHYSICS BOX2D
 function love.load ()
     
@@ -370,7 +380,7 @@ function love.draw ()
 	love.graphics.polygon("fill", objects.block1.body:getWorldPoints(objects.block1.shape:getPoints()))
 	love.graphics.polygon("fill", objects.block2.body:getWorldPoints(objects.block2.shape:getPoints()))
 end
---
+--]]
 
 
 --[[
@@ -749,8 +759,17 @@ end
 
 --[=[
 -- SHADER LOVE GLSL
+--[[
+GLSL              | Effect language     | Comment
+------------------+---------------------+--------------------------------------
+float             | number              |
+sampler2D         | Image               | LÖVE only supports 2D textures anyway
+uniform           | extern              | less technical term
+texture2D(tex,st) | Texel(tex,st)       | `tex' is an image, `st' is a vec2
+]]
 function love.load ()
-	splash = love.graphics.newImage("futuretech_logo.jpg")
+	--splash = love.graphics.newImage("futuretech_logo.jpg")
+	splash = love.graphics.newImage("F-91W ammo.jpg")
 	orang = love.graphics.newImage("orang.png")
 	myShader = love.graphics.newShader[[
 		/*
@@ -840,7 +859,7 @@ function love.load ()
 			pixel.b = abs(0.4-pixel.b);
 			return pixel;
 		}*/
-		// static TV noise (full)
+		/*// static TV noise (full)
 		float rand2 ( vec2 p ) {
 			// e^pi (Gelfond's constant)
 			// 2^sqrt(2) (Gelfond–Schneider constant)
@@ -857,9 +876,9 @@ function love.load ()
 			pixel.g = rand1(vec2(texture_coords.x, texture_coords.y));
 			pixel.b = rand1(vec2(texture_coords.x, texture_coords.y));
 			return pixel;
-		}
+		}*/
 		
-		/*// static TV noise (partial)
+		// static TV noise (partial)
 		extern float factor = 1;
 		extern float addPercent = 0.1;
 		extern float clamp = 0.1;
@@ -876,17 +895,19 @@ function love.load ()
 			vec4 clampedNoise = vec4(clampedGrey, clampedGrey, clampedGrey, 1);
 			return (Texel(tex, tc) * clampedNoise * (1 - addPercent) + noise * addPercent) * color;
 		}
-		*/
 		
 		
+			
+			
+			
 	]]
-	
+
 end
 
 x = 0
 y = 0
 toggle = false
-scale = 10
+scale = 2
 
 function love.draw ()
 	love.graphics.draw(orang, 0, 0)
@@ -1385,7 +1406,7 @@ function love.load ()
 end
 
 function love.draw ()
-	love.graphics.draw(char1, activeFrame, 0, 0, 0, scale, scale)
+	love.graphics.draw(char1, activeFrame, 0, 100, 0, scale, scale)
 	
 end
 
@@ -2570,5 +2591,142 @@ function love.update (dt)
 	
 end
 ]]
+
+
+--[[
+-- CHANGE CAMERA POSITION
+x = 0
+y = 0
+
+function love.load ()
+	
+end
+
+function love.draw ()
+	love.graphics.translate(x, y)
+	
+	love.graphics.setColor(255, 0, 0)
+	love.graphics.rectangle("fill", 100, 100, 100, 200)
+end
+
+function love.update (dt)
+	if love.keyboard.isDown("right") then
+		x = x + 1
+	end
+	if love.keyboard.isDown("left") then
+		x = x - 1
+	end
+	if love.keyboard.isDown("up") then
+		y = y - 1
+	end
+	if love.keyboard.isDown("down") then
+		y = y + 1
+	end
+	if love.keyboard.isDown("escape") then
+		love.event.quit()
+	end
+end
+]]
+
+
+--[[
+-- PHYSICS COLLISION CALLBACKS
+force = ""
+function love.load()
+    world = love.physics.newWorld(0, 200, true)
+    world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+ 
+    ball = {}
+	ball.b = love.physics.newBody(world, 400,200, "dynamic")
+	ball.b:setMass(10)
+	ball.s = love.physics.newCircleShape(50)
+	ball.f = love.physics.newFixture(ball.b, ball.s)
+	ball.f:setRestitution(0.4)    -- make it bouncy
+	ball.f:setUserData("Ball")
+	
+    static = {}
+	static.b = love.physics.newBody(world, 400,400, "static")
+	static.s = love.physics.newRectangleShape(200,50)
+	static.f = love.physics.newFixture(static.b, static.s)
+	static.f:setUserData("Block")
+ 
+    text       = ""   -- we'll use this to put info text on the screen later
+    persisting = 0    -- we'll use this to store the state of repeated callback calls
+end
+ 
+function love.update(dt)
+    world:update(dt)
+ 
+    if love.keyboard.isDown("right") then
+        ball.b:applyForce(1000, 0)
+    elseif love.keyboard.isDown("left") then
+        ball.b:applyForce(-1000, 0)
+    end
+    if love.keyboard.isDown("up") then
+        ball.b:applyForce(0, -5000)
+    elseif love.keyboard.isDown("down") then
+        ball.b:applyForce(0, 1000)
+    end
+ 
+    if string.len(text) > 768 then    -- cleanup when 'text' gets too long
+        text = ""
+    end
+end
+ 
+function love.draw()
+    love.graphics.circle("line", ball.b:getX(),ball.b:getY(), ball.s:getRadius(), 20)
+    love.graphics.polygon("line", static.b:getWorldPoints(static.s:getPoints()))
+ 
+    love.graphics.print(text, 10, 10)
+	
+	love.graphics.print(force, 100, 400)
+end
+ 
+function beginContact(a, b, coll)
+    x,y = coll:getNormal()
+    text = text.."\n"..a:getUserData().." colliding with "..b:getUserData().." with a vector normal of: "..x..", "..y
+end
+ 
+function endContact(a, b, coll)
+    persisting = 0
+    text = text.."\n"..a:getUserData().." uncolliding with "..b:getUserData()
+end
+ 
+function preSolve(a, b, coll)
+    if persisting == 0 then    -- only say when they first start touching
+        text = text.."\n"..a:getUserData().." touching "..b:getUserData()
+    elseif persisting < 20 then    -- then just start counting
+        text = text.." "..persisting
+    end
+    persisting = persisting + 1    -- keep track of how many updates they've been touching for
+end
+ 
+function postSolve(a, b, coll, normalimpulse, tangentimpulse)
+	force = normalimpulse	-- strength of force
+end
+]]
+
+
+--
+--
+
+function love.load ()
+	orang = love.graphics.newImage("futuretech_logo.jpg")
+	stats = love.graphics.getStats()
+end
+
+function love.draw ()
+	love.graphics.draw(orang, 50, 50, 0, 1, 1)
+	love.graphics.draw(orang, 150, 50, 0, 1, 1)
+	love.graphics.print(stats.drawcalls)
+end
+
+function love.update (dt)
+	stats = love.graphics.getStats()
+end
+
+
+
+
 
 
