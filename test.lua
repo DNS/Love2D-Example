@@ -1,13 +1,9 @@
 
-function test ()
-
-	for x=1, 8 do
-	
-	end
-end
 
 
-test()
+math.randomseed(os.time())
+value = math.random(1, 2)		-- return random number between 1-100
+print(value)
 
-print(x)
+
 

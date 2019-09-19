@@ -125,14 +125,13 @@ end
 ]]
 
 --[[
-
 -- GAME STATE & TIMER
 state = 1;
 
 function love.load ()
 	orang = love.graphics.newImage("orang.png")
 	splash = love.graphics.newImage("futuretech_logo.jpg")
-	vid1 = love.graphics.newVideo("Typing_example_ogv_160p.ogv", true)
+	--vid1 = love.graphics.newVideo("Typing_example_ogv_160p.ogv", true)
 	
 	initTime = love.timer.getTime()
 end
@@ -141,12 +140,12 @@ function love.draw ()
 	love.window.setTitle(love.timer.getFPS())
 	
 	if state == 1 then
-		vid1:play()
+		--vid1:play()
 		love.graphics.draw(splash, 0, 0, 0, 1, 1)
-		love.graphics.draw(vid1, 10, 10, 0, 1, 1)
+		--love.graphics.draw(vid1, 10, 10, 0, 1, 1)
 		love.graphics.draw(orang, 210, 80, 0, 1, 1)
 	elseif state == 2 then
-		vid1:rewind()
+		--vid1:rewind()
 		--vid1:pause()
 		love.graphics.print("ok " .. 123, 400, 300) -- print to screen
 	end
@@ -263,35 +262,77 @@ end
 --[[
 -- FADE
 
-alpha = 255
+state_toggle = 1
+alpha = 0
 
 function love.load ()
 	love.graphics.setBackgroundColor(100, 200, 200)
-	orang = love.graphics.newImage("futuretech_logo.jpg")
+	logo = love.graphics.newImage("futuretech_logo.jpg")
+	
+	initTime = love.timer.getTime()
 end
 
 function love.draw ()
 	love.window.setTitle(love.timer.getFPS())
-	love.graphics.draw(orang, 50, 50, 0, 1, 1)
+	love.graphics.draw(logo, 50, 50, 0, 1, 1)
 end
 
 function love.update (dt)
-	--if detect_click(orang, 210, 80) then is_clicked = true end
-	fade_black()
+	if state_toggle == 1 then
+		state_toggle = fade_in()
+	elseif state_toggle == 2 then
+		currentTime = love.timer.getTime()
+		timeDelta = math.floor(currentTime - initTime)
+		if timeDelta >= 5.0 then
+			initTime = currentTime
+			if state == 1 then
+				state = 2
+			elseif state == 2 then
+				state = 1
+			end
+			
+			state_toggle = 3
+		end
+	elseif state_toggle == 3 then
+		state_toggle = fade_out()
+	elseif state_toggle == 4 then
+		
+	end
+	
+	
 end
 
 
-function fade_black ()
+function fade_out ()
 	if alpha > 0 then
 		alpha = alpha - 7
 		love.graphics.setColor(255, 255, 255, alpha)
-		return false
-	else
-		return true
-	end	
+		return 3
+	elseif alpha <= 0 then
+		alpha = 0
+		love.graphics.setColor(255, 255, 255, alpha)
+		return 4
+	end
+end
+
+function fade_in ()
+	if alpha < 255 then
+		alpha = alpha + 7
+		love.graphics.setColor(255, 255, 255, alpha)
+		return 1
+	elseif alpha >= 255 then
+		alpha = 255
+		love.graphics.setColor(255, 255, 255, alpha)
+		return 2
+	end
+end
+
+function love.keyreleased (key)
+	if key == "escape" then
+		love.event.quit()
+	end
 end
 ]]
-
 
 --[[
 -- EXIT when ESC key pressed and released
@@ -324,7 +365,7 @@ function love.load ()
 	
 	--let's create the ground
 	objects.ground = {}
-	objects.ground.body = love.physics.newBody(world, 650/2, 650-50/2) --remember, the shape (the rectangle we create next) anchors to the body from its center, so we have to move it to (650/2, 650-50/2)
+	objects.ground.body = love.physics.newBody(world, 650/2, 650-50/2, "static") --remember, the shape (the rectangle we create next) anchors to the body from its center, so we have to move it to (650/2, 650-50/2)
 	objects.ground.shape = love.physics.newRectangleShape(650, 50) --make a rectangle with a width of 650 and a height of 50
 	objects.ground.fixture = love.physics.newFixture(objects.ground.body, objects.ground.shape) --attach shape to body
 	
@@ -753,8 +794,8 @@ end
 function love.update (dt)
 	
 end
-
 ]]
+
 
 
 --[=[
@@ -1255,12 +1296,15 @@ end
 -- IMAGE SCALING
 scale = 0.5
 function love.load ()
-	splash = love.graphics.newImage("futuretech_logo.jpg")
+	splashimg = love.graphics.newImage("futuretech_logo.jpg")
+	love.graphics.setDefaultFilter('linear', 'linear', 16)
 	
+	-- override filter
+	splashimg:setFilter('nearest', 'nearest', 16)
 end
 
 function love.draw ()
-	love.graphics.draw(splash, 0, 0, 0, scale, scale)
+	love.graphics.draw(splashimg, 0, 0, 0, scale, scale)
 	
 end
 
@@ -1640,8 +1684,8 @@ end
 
 function love.draw ()
 	love.graphics.setFont(font)
-	love.graphics.print('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 16, 16)
-	love.graphics.print('Text is now drawn using the font', 16, 32)
+	love.graphics.print('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 16, 16, 0, 3, 3)
+	love.graphics.print('Text is now drawn using the font', 16, 320, 0, 3, 3)
 end
 
 function love.update (dt)
@@ -1653,12 +1697,12 @@ end
 --[[
 -- LOAD & PLAY VIDEO (.OGV only)
 function love.load ()
-	video = love.graphics.newVideo("Kamen Joshi - GENKIDANE.ogv")
+	video = love.graphics.newVideo("Kamen Joshi - GENKIDANE☆.ogv")
 	video:play()
 end
 
 function love.draw ()
-	love.graphics.draw(video, 0, 0)
+	love.graphics.draw(video,0,0,0,1,1)
 end
 
 function love.update (dt)
@@ -2707,9 +2751,9 @@ end
 ]]
 
 
---
---
 
+--[[
+--DRAW CALLS
 function love.load ()
 	orang = love.graphics.newImage("futuretech_logo.jpg")
 	stats = love.graphics.getStats()
@@ -2724,7 +2768,15 @@ end
 function love.update (dt)
 	stats = love.graphics.getStats()
 end
+]]
 
+--[[
+-- SET WINDOW ICON
+function love.load ()
+	love.window.setIcon( love.image.newImageData("icon.png") )
+end
+
+]]
 
 
 
