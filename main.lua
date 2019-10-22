@@ -800,6 +800,8 @@ end
 
 --[=[
 -- SHADER LOVE GLSL
+-- Set ENV to OpenGL ES to test mobile (android/ios) shader on PC
+-- LOVE_GRAPHICS_USE_OPENGLES=1
 --[[
 GLSL              | Effect language     | Comment
 ------------------+---------------------+--------------------------------------
@@ -808,6 +810,14 @@ sampler2D         | Image               | LÖVE only supports 2D textures anyway
 uniform           | extern              | less technical term
 texture2D(tex,st) | Texel(tex,st)       | `tex' is an image, `st' is a vec2
 ]]
+--[[
+GLSL type conversion
+float a = float(2);
+int b1 = int(5.3);	// same as floor()
+int b2 = floor(5.3);
+int b3 = ceil(5.3);
+]]
+
 function love.load ()
 	--splash = love.graphics.newImage("futuretech_logo.jpg")
 	splash = love.graphics.newImage("F-91W ammo.jpg")
